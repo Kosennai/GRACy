@@ -16,7 +16,7 @@ import time
 from Bio import SeqIO
 
 class Ui_Form(object):
-	def setupUi(self, Form,installationDirectory):
+	def setupUi(self, Form, installationDirectory):
 		Form.setObjectName("Form")
 		Form.resize(774, 636)
 		self.label = QtWidgets.QLabel(Form)
@@ -155,1112 +155,1115 @@ class Ui_Form(object):
 
 		os.chdir(workingDirectory)
 		for cFile in self.confFiles:
-			self.refreshTextArea((cFile.split("/"))[-1])
-			confFile = open(cFile)
-			projectName = ((confFile.readline().rstrip()).split("\t"))[1]
-			os.system("mkdir -p "+projectName)
-			os.system("cp "+cFile+" "+projectName)
-			os.chdir(projectName)
-			logFile = open('logFile.log','w')
-			read1 = ((confFile.readline().rstrip()).split("\t"))[1]
-			read2 = ((confFile.readline().rstrip()).split("\t"))[1]
-			read1_toFill = ((confFile.readline().rstrip()).split("\t"))[1]
-			read2_toFill = ((confFile.readline().rstrip()).split("\t"))[1]
-			confFile.readline() #Read comment
-
-			now = datetime.datetime.now()
-			logFile.write("Date: "+now.strftime("%Y-%m-%d"))
-			logFile.write("Sample name: "+projectName)
-			logFile.write("Read1 fastq: "+read1)
-			logFile.write("Read2 fastq: "+read2+"\n\n\n")
-
-			#***************************************************************
-			#**************** 1 Reads quality filtering ********************
-			#***************************************************************
-
-
-			qualityFiltering = ((confFile.readline().rstrip()).split("\t"))[1]
-			logFile.write("Quality filtering: "+qualityFiltering)
-
-			if qualityFiltering == "yes" or qualityFiltering == "Yes":
-				
-				self.logArea.append("Starting filtering for sample "+projectName)
-				self.logArea.repaint()  
-				
-				
-				
+			try:
+				self.refreshTextArea((cFile.split("/"))[-1])
+				confFile = open(cFile)
+				projectName = ((confFile.readline().rstrip()).split("\t"))[1]
+				os.system("mkdir -p "+projectName)
+				os.system("cp "+cFile+" "+projectName)
+				os.chdir(projectName)
+				logFile = open('logFile.log','w')
+				read1 = ((confFile.readline().rstrip()).split("\t"))[1]
+				read2 = ((confFile.readline().rstrip()).split("\t"))[1]
+				read1_toFill = ((confFile.readline().rstrip()).split("\t"))[1]
+				read2_toFill = ((confFile.readline().rstrip()).split("\t"))[1]
+				confFile.readline() #Read comment
 
 				now = datetime.datetime.now()
-				logFile.write("Quality filtering started at "+now.strftime("%H:%M"))
+				logFile.write("Date: "+now.strftime("%Y-%m-%d"))
+				logFile.write("Sample name: "+projectName)
+				logFile.write("Read1 fastq: "+read1)
+				logFile.write("Read2 fastq: "+read2+"\n\n\n")
 
-				qualConfFile = open("qualityFiltering.conf","w")
-				qualConfFile.write("ProjectName\tallSamples\n")
-				qualConfFile.write("Sample_start****************************************\n")
-				qualConfFile.write("SampleName\t"+projectName+"\n")
-				qualConfFile.write("Read1\t"+read1+"\n")
-				qualConfFile.write("Read2\t"+read2+"\n")
-				qualConfFile.write("Sample_start***Filtering and trimming options\n")
-				for a in range(6):
-					qualConfFile.write(confFile.readline())
-				qualConfFile.write("SampleEnd*******************************************\n")
-				qualConfFile.close()
-				
-				self.logArea.append("*  Running prinseq.....")
-				self.logArea.repaint() 
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/runQualityFiltering.py qualityFiltering.conf "+installationDirectory)
-				os.system("mkdir -p 1_cleanReads")
-				testFormat = open(projectName+"_hq_1.fastq")
-				header = testFormat.readline().rstrip()
-				testFormat.close()
-				time.sleep(1)
-				if " 1" in header:
-					os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/readsFiltering/utils/changeHeaderFormat.py "+projectName+"_hq_1.fastq "+projectName+"_hq_2.fastq")
-				
-				os.system("mv "+projectName+"_hq_1.fastq ./1_cleanReads/qualityFiltered_1.fq")
-				os.system("mv "+projectName+"_hq_2.fastq ./1_cleanReads/qualityFiltered_2.fq")
+				#***************************************************************
+				#**************** 1 Reads quality filtering ********************
+				#***************************************************************
 
 
-				now = datetime.datetime.now()
-				logFile.write("Quality filtering ended at "+now.strftime("%H:%M")+"\n\n")
-				os.system("rm -f badReads1.fastq badReads2.fastq *filterStats.txt *singletons.fastq paired_normalized.fq paired.fq qualityFiltering.conf")
-				
-				self.logArea.append("Filtering completed for sample "+projectName+"!!")
-				self.logArea.repaint() 
-				
-				
-				
+				qualityFiltering = ((confFile.readline().rstrip()).split("\t"))[1]
+				logFile.write("Quality filtering: "+qualityFiltering)
 
-			else:
-				
-				self.logArea.append("No quality filtering required on project  "+projectName+"")
-				self.logArea.repaint() 
-				
-				
-				
-
-				for a in range(6):
-					confFile.readline()
-				if os.path.isdir("./1_cleanReads/") == True:
-					if os.path.isfile("./1_cleanReads/qualityFiltered_1.fq") == False:
-						print("File ","./1_cleanReads/qualityFiltered_1.fq does not exist, now exiting....")
-						exit()
-					if os.path.isfile("./1_cleanReads/qualityFiltered_2.fq") == False:
-						print("File ","./1_cleanReads/qualityFiltered_2.fq does not exist, now exiting....")
-						exit()
-				else:
-					os.system("mkdir 1_cleanReads")
-					os.chdir("1_cleanReads")
+				if qualityFiltering == "yes" or qualityFiltering == "Yes":
 					
-				testFormat = open(read1)
-				header = testFormat.readline().rstrip()
-				testFormat.close()
-				time.sleep(1)
-				if " 1" in header:
-					os.system("cp "+read1+" qualityFiltered_1.fq")
-					os.system("cp "+read2+" qualityFiltered_2.fq")
-					os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/readsFiltering/utils/changeHeaderFormat.py qualityFiltered_1.fq qualityFiltered_2.fq")
+					self.logArea.append("Starting filtering for sample "+projectName)
+					self.logArea.repaint()  
+					
+					
+					
+
+					now = datetime.datetime.now()
+					logFile.write("Quality filtering started at "+now.strftime("%H:%M"))
+
+					qualConfFile = open("qualityFiltering.conf","w")
+					qualConfFile.write("ProjectName\tallSamples\n")
+					qualConfFile.write("Sample_start****************************************\n")
+					qualConfFile.write("SampleName\t"+projectName+"\n")
+					qualConfFile.write("Read1\t"+read1+"\n")
+					qualConfFile.write("Read2\t"+read2+"\n")
+					qualConfFile.write("Sample_start***Filtering and trimming options\n")
+					for a in range(6):
+						qualConfFile.write(confFile.readline())
+					qualConfFile.write("SampleEnd*******************************************\n")
+					qualConfFile.close()
+					
+					self.logArea.append("*  Running prinseq.....")
+					self.logArea.repaint() 
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/runQualityFiltering.py qualityFiltering.conf "+installationDirectory)
+					os.system("mkdir -p 1_cleanReads")
+					testFormat = open(projectName+"_hq_1.fastq")
+					header = testFormat.readline().rstrip()
+					testFormat.close()
+					time.sleep(1)
+					if " 1" in header:
+						os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/readsFiltering/utils/changeHeaderFormat.py "+projectName+"_hq_1.fastq "+projectName+"_hq_2.fastq")
+					
+					os.system("mv "+projectName+"_hq_1.fastq ./1_cleanReads/qualityFiltered_1.fq")
+					os.system("mv "+projectName+"_hq_2.fastq ./1_cleanReads/qualityFiltered_2.fq")
+
+
+					now = datetime.datetime.now()
+					logFile.write("Quality filtering ended at "+now.strftime("%H:%M")+"\n\n")
+					os.system("rm -f badReads1.fastq badReads2.fastq *filterStats.txt *singletons.fastq paired_normalized.fq paired.fq qualityFiltering.conf")
+					
+					self.logArea.append("Filtering completed for sample "+projectName+"!!")
+					self.logArea.repaint() 
+					
+					
+					
+
 				else:
-					os.system("ln -s "+read1+" qualityFiltered_1.fq")
-					os.system("ln -s "+read2+" qualityFiltered_2.fq")
-					os.chdir("../")
+					
+					self.logArea.append("No quality filtering required on project  "+projectName+"")
+					self.logArea.repaint() 
+					
+					
+					
+
+					for a in range(6):
+						confFile.readline()
+					if os.path.isdir("./1_cleanReads/") == True:
+						if os.path.isfile("./1_cleanReads/qualityFiltered_1.fq") == False:
+							print("File ","./1_cleanReads/qualityFiltered_1.fq does not exist, now exiting....")
+							exit()
+						if os.path.isfile("./1_cleanReads/qualityFiltered_2.fq") == False:
+							print("File ","./1_cleanReads/qualityFiltered_2.fq does not exist, now exiting....")
+							exit()
+					else:
+						os.system("mkdir 1_cleanReads")
+						os.chdir("1_cleanReads")
+						
+					testFormat = open(read1)
+					header = testFormat.readline().rstrip()
+					testFormat.close()
+					time.sleep(1)
+					if " 1" in header:
+						os.system("cp "+read1+" qualityFiltered_1.fq")
+						os.system("cp "+read2+" qualityFiltered_2.fq")
+						os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/readsFiltering/utils/changeHeaderFormat.py qualityFiltered_1.fq qualityFiltered_2.fq")
+					else:
+						os.system("ln -s "+read1+" qualityFiltered_1.fq")
+						os.system("ln -s "+read2+" qualityFiltered_2.fq")
+						os.chdir("../")
 
 
-			#***************************************************************
-			#*********************** 2 Denovo assembly *********************
-			#***************************************************************
-			confFile.readline() #Read comment
+				#***************************************************************
+				#*********************** 2 Denovo assembly *********************
+				#***************************************************************
+				confFile.readline() #Read comment
 
-			denovoAssembly = ((confFile.readline().rstrip()).split("\t"))[1]
-			print(denovoAssembly)
-			if denovoAssembly == "yes" or denovoAssembly=="Yes":
-				
-				self.logArea.append("\nPerforming denovo assembly on sample "+projectName+"")
-				self.logArea.append("*  Normalizing reads....")
-				self.logArea.repaint() 
-				
-				
-				now = datetime.datetime.now()
-				logFile.write("De novo assembly started at "+now.strftime("%H:%M"))
-				print("\nPerforming denovo assembly.......")
-				os.system(installationDirectory+"src/conda/bin/interleave-reads.py 1_cleanReads/qualityFiltered_1.fq 1_cleanReads/qualityFiltered_2.fq -o paired.fq")
-				availableMemory = self.memoryCombo.currentText()
-				os.system(installationDirectory+"src/conda/bin/normalize-by-median.py  -k 17 -C 200 -M "+availableMemory+"e9 -p  -o - paired.fq > paired_normalized.fq")
-				os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/splitIntervealed.py paired_normalized.fq")
-				os.system("mv newRead_1.fastq ./1_cleanReads/"+projectName+"_hq_1.fastq")
-				os.system("mv newRead_2.fastq ./1_cleanReads/"+projectName+"_hq_2.fastq")
-				os.system("rm -f paired_normalized.fq paired.fq")
+				denovoAssembly = ((confFile.readline().rstrip()).split("\t"))[1]
+				print(denovoAssembly)
+				if denovoAssembly == "yes" or denovoAssembly=="Yes":
+					
+					self.logArea.append("\nPerforming denovo assembly on sample "+projectName+"")
+					self.logArea.append("*  Normalizing reads....")
+					self.logArea.repaint() 
+					
+					
+					now = datetime.datetime.now()
+					logFile.write("De novo assembly started at "+now.strftime("%H:%M"))
+					print("\nPerforming denovo assembly.......")
+					os.system(installationDirectory+"src/conda/bin/interleave-reads.py 1_cleanReads/qualityFiltered_1.fq 1_cleanReads/qualityFiltered_2.fq -o paired.fq")
+					availableMemory = self.memoryCombo.currentText()
+					os.system(installationDirectory+"src/conda/bin/normalize-by-median.py  -k 17 -C 200 -M "+availableMemory+"e9 -p  -o - paired.fq > paired_normalized.fq")
+					os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/splitIntervealed.py paired_normalized.fq")
+					os.system("mv newRead_1.fastq ./1_cleanReads/"+projectName+"_hq_1.fastq")
+					os.system("mv newRead_2.fastq ./1_cleanReads/"+projectName+"_hq_2.fastq")
+					os.system("rm -f paired_normalized.fq paired.fq")
 
-				
-				self.logArea.append("*  Running SPAdes....")
-				self.logArea.repaint() 
-				
-				
-				
-				now = datetime.datetime.now()
-				os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/getBestAssembly.py ./1_cleanReads/"+projectName+"_hq_1.fastq ./1_cleanReads/"+projectName+"_hq_2.fastq assemblyStatistics.txt "+installationDirectory)
-				os.system("mkdir 2_spadesAssembly")
-				os.system("mv scaffolds.fasta ./2_spadesAssembly/")
-				os.system("rm numReads.txt subsample_1.fq subsample_2.fq null N50.txt")
-				os.system("mv assemblyStatistics.txt ./2_spadesAssembly")
-				
-				self.logArea.append("De novo assembly completed on sample "+projectName+"!!")
-				self.logArea.append("Normalizing reads....")
-				self.logArea.repaint() 
-				
-				
-				
+					
+					self.logArea.append("*  Running SPAdes....")
+					self.logArea.repaint() 
+					
+					
+					
+					now = datetime.datetime.now()
+					os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/getBestAssembly.py ./1_cleanReads/"+projectName+"_hq_1.fastq ./1_cleanReads/"+projectName+"_hq_2.fastq assemblyStatistics.txt "+installationDirectory)
+					os.system("mkdir 2_spadesAssembly")
+					os.system("mv scaffolds.fasta ./2_spadesAssembly/")
+					os.system("rm numReads.txt subsample_1.fq subsample_2.fq null N50.txt")
+					os.system("mv assemblyStatistics.txt ./2_spadesAssembly")
+					
+					self.logArea.append("De novo assembly completed on sample "+projectName+"!!")
+					self.logArea.append("Normalizing reads....")
+					self.logArea.repaint() 
+					
+					
+					
 
 
-			else:
-				
-				self.logArea.append("\nNo de novo required for sample "+projectName+"")
-				self.logArea.repaint() 
-				
-				
-				
+				else:
+					
+					self.logArea.append("\nNo de novo required for sample "+projectName+"")
+					self.logArea.repaint() 
+					
+					
+					
+					if os.path.isfile("./2_spadesAssembly/scaffolds.fasta") == False:
+						print("You chose not to run assembler but scaffolds.fasta file is not there. Now exiting......")
+						logFile.write("ERROR!\n You chose not to run assembler but scaffolds.fasta file is not there\n")
+						exit()
 				if os.path.isfile("./2_spadesAssembly/scaffolds.fasta") == False:
-					print("You chose not to run assembler but scaffolds.fasta file is not there. Now exiting......")
-					logFile.write("ERROR!\n You chose not to run assembler but scaffolds.fasta file is not there\n")
+					print("Something went wrong with the assembly. Now exiting......")
+					logFile.write("ERROR!\n Something went wrong with the assembly\n")
 					exit()
-			if os.path.isfile("./2_spadesAssembly/scaffolds.fasta") == False:
-				print("Something went wrong with the assembly. Now exiting......")
-				logFile.write("ERROR!\n Something went wrong with the assembly\n")
-				exit()
-			else:
-				os.system("rm -rf ./2_spadesAssembly/corrected")
-				now = datetime.datetime.now()
-				logFile.write("De novo assembly ended at "+now.strftime("%H:%M")+"\n\n")
+				else:
+					os.system("rm -rf ./2_spadesAssembly/corrected")
+					now = datetime.datetime.now()
+					logFile.write("De novo assembly ended at "+now.strftime("%H:%M")+"\n\n")
 
 
 
-			#***************************************************************
-			#******************* 3 Scaffold Oriantation ********************
-			#***************************************************************
-			confFile.readline() #Read comment
-			performScaffolding = ((confFile.readline().rstrip()).split("\t"))[1]
+				#***************************************************************
+				#******************* 3 Scaffold Oriantation ********************
+				#***************************************************************
+				confFile.readline() #Read comment
+				performScaffolding = ((confFile.readline().rstrip()).split("\t"))[1]
 
-			if performScaffolding == "yes" or performScaffolding == "Yes":
-				now = datetime.datetime.now()
-				logFile.write("Scaffolding started at "+now.strftime("%H:%M")+"")
-				
-				self.logArea.append("\nPerforming scaffodling on sample "+projectName)
-				self.logArea.repaint()
-				
-				
-				
-				os.system("mkdir -p 3_scaffoldsOrientation")
-
-				os.system("cp "+installationDirectory+"src/scripts/assembly/utils/createCenterScaffold.py ./3_scaffoldsOrientation/")
-				os.system("cp "+installationDirectory+"data/merlinReference/merlinGenome_190000_200000_f.txt ./3_scaffoldsOrientation/")
-				os.system("cp "+installationDirectory+"src/scripts/assembly/utils/extractSeqByRange.py ./3_scaffoldsOrientation/")
-				os.system("cp "+installationDirectory+"/src/scripts/assembly/utils/gapPrediction.py ./3_scaffoldsOrientation/")
-				os.system("cp "+installationDirectory+"data/merlinReference/hcmv_genomes.fasta* ./3_scaffoldsOrientation/")
-				#os.system("cp "+installationDirectory+"src/scripts/assembly/utils/cap3 ./3_scaffoldsOrientation/")
-
-				os.chdir("3_scaffoldsOrientation")
-				print("Calculating the average insert size......")
-				
-				self.logArea.append("*  Calculating the average insert size")
-				self.logArea.repaint()
-				
-				
-				
-				self.bowtiePE("../2_spadesAssembly/scaffolds.fasta","../1_cleanReads/qualityFiltered_1.fq","../1_cleanReads/qualityFiltered_2.fq",self.numThreadsCombo.currentText())
-				os.system(installationDirectory+"src/conda/bin/picard CollectInsertSizeMetrics I=test_sorted.bam  O=insert_size_metrics.txt H=insert_size_histogram.pdf M=0.5")
-				os.system("head -8 insert_size_metrics.txt | tail -2 | cut -f 6 | tail -1 >insert.size")
-				isize = open("insert.size")
-				insertSize = isize.readline().rstrip()
-				isize.close()
-				print("insertSize",insertSize)
-				
-				self.logArea.append("*  Insert size = "+insertSize)
-				self.logArea.repaint()
-				
-				
-				
-
-				print("\nAligning the contigs to the merlin reference gneome......")
-				
-				self.logArea.append("*  Aligning contigs to reference")
-				self.logArea.repaint()
-				
-				
-				
-
-
-				os.system(installationDirectory+"src/conda/bin/python createCenterScaffold.py "+projectName+" "+installationDirectory+" "+insertSize+" "+self.numThreadsCombo.currentText())
-				os.system("cp newFinalScaffold.fasta longestScaffold.fasta ")
-				
-				self.logArea.append("*  Filling gaps from existing sequences")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/python gapPrediction.py longestScaffold.fasta ../1_cleanReads/qualityFiltered_1.fq ../1_cleanReads/qualityFiltered_2.fq "+installationDirectory)
-
-				finalScaffoldFile = open("finalScaffold.fasta","w")
-				finalScaffoldFile.write(">finalScaffold\n")
-				gapPresent = 0
-				for seq_record in SeqIO.parse("filledGenome.fasta","fasta"):
-					finalScaffoldFile.write(str(seq_record.seq))
-					if "N" in str(seq_record.seq):
-						gapPresent = 1
-				finalScaffoldFile.close()
-				if gapPresent == 1:
+				if performScaffolding == "yes" or performScaffolding == "Yes":
+					now = datetime.datetime.now()
+					logFile.write("Scaffolding started at "+now.strftime("%H:%M")+"")
 					
-					self.logArea.append("*  Filling gaps with existing sequences")
+					self.logArea.append("\nPerforming scaffodling on sample "+projectName)
 					self.logArea.repaint()
 					
 					
 					
-					gfFile = open("gapfillerlib.txt","w")
-					gfFile.write("lib1 bwa ../1_cleanReads/qualityFiltered_1.fq ../1_cleanReads/qualityFiltered_2.fq "+ insertSize+" 0.25 FR")
-					gfFile.close()
-					os.system(installationDirectory+"src/conda/bin/perl "+installationDirectory+"src/scripts/assembly/utils/GapFiller -q "+installationDirectory+" -l gapfillerlib.txt -s filledGenome.fasta -T "+self.numThreadsCombo.currentText())
-					os.system("mv finalScaffold.fasta finalScaffold.fasta_beforeGapfilling")
-					os.system("cp standard_output/standard_output.gapfilled.final.fa ./finalScaffold.fasta")
+					os.system("mkdir -p 3_scaffoldsOrientation")
 
-				now = datetime.datetime.now()
-				
-				self.logArea.append("Scaffolding completed on sample "+projectName+"!!")
-				self.logArea.repaint()
-				
-				
-				
-				logFile.write("Scaffolding finishes at "+now.strftime("%H:%M"))
-				if self.intermediateFilesCombo.currentText() == "No":
-					os.system("rm -rf *.bam *.sam *.bt2 *txt *ap* cent* filled* hcmv* join* last* long* merlin* null *fastq sb* sequence* standard* temp* two* *.py found* new*")
-				os.chdir("../")
-			else:
-				
-				self.logArea.append("\nNo scaffolding required for sample "+projectName)
-				self.logArea.repaint()
-				
-				
-				
-				if os.path.isfile("./3_scaffoldsOrientation/finalScaffold.fasta") == False:
-					print("You chose not to run the scaffolding step but finalScaffold.fasta file is not there. Now exiting......")
-					logFile.write("You chose not to run the scaffolding step but finalScaffold.fasta file is not there. Now exiting......")
-					exit()
+					os.system("cp "+installationDirectory+"src/scripts/assembly/utils/createCenterScaffold.py ./3_scaffoldsOrientation/")
+					os.system("cp "+installationDirectory+"data/merlinReference/merlinGenome_190000_200000_f.txt ./3_scaffoldsOrientation/")
+					os.system("cp "+installationDirectory+"src/scripts/assembly/utils/extractSeqByRange.py ./3_scaffoldsOrientation/")
+					os.system("cp "+installationDirectory+"/src/scripts/assembly/utils/gapPrediction.py ./3_scaffoldsOrientation/")
+					os.system("cp "+installationDirectory+"data/merlinReference/hcmv_genomes.fasta* ./3_scaffoldsOrientation/")
+					#os.system("cp "+installationDirectory+"src/scripts/assembly/utils/cap3 ./3_scaffoldsOrientation/")
 
-
-
-			#***************************************************************
-			#********************** 4 Create Consensus *********************
-			#***************************************************************
-			confFile.readline() #Read comment
-			perform1stConsensusCalling = ((confFile.readline().rstrip()).split("\t"))[1]
-			if perform1stConsensusCalling == "yes" or perform1stConsensusCalling == "Yes":
-				now = datetime.datetime.now()
-				logFile.write("First consensus calling started at "+now.strftime("%H:%M")+"\n\n")
-				
-				self.logArea.append("\nFirst round of consensus calling on sample "+projectName)
-				self.logArea.repaint()
-				
-				
-				
-				os.system("mkdir 4_createConsensus")
-				os.system("cp ./3_scaffoldsOrientation/finalScaffold.fasta ./4_createConsensus")
-				#os.system("cp "+installationDirectory+"assembly/scripts/joinConsensus.py ./4_createConsensus")
-				#os.system("cp "+installationDirectory+"assembly/scripts/hcmvConsensusCallPipeline ./4_createConsensus")
-				#os.system("cp "+installationDirectory+"assembly/scripts/createConsensus ./4_createConsensus")
-				os.system("cp "+installationDirectory+"src/scripts/assembly/utils/extractSeqByRange.py ./4_createConsensus")
-				#os.system("cp "+installationDirectory+"assembly/scripts/libdeflate.so ./4_createConsensus")
-				os.chdir("4_createConsensus")
-
-				for seq_record in SeqIO.parse("finalScaffold.fasta","fasta"):
-					assemblyLength = len(str(seq_record.seq))
-
-
-				#os.system(installationDirectory+"src/conda/bin/prinseq-lite.pl -fastq ../1_cleanReads/qualityFiltered_1.fq  -fastq2 ../1_cleanReads/qualityFiltered_2.fq -min_qual_mean 25 -trim_qual_right 30 -trim_ns_right 20  -trim_qual_window 5 -trim_qual_step 1 -min_len 80 -out_bad null -out_good ../1_cleanReads/prinSeqReads")
-				#os.system(installationDirectory+"/src/conda/bin/python "+installationDirectory+"src/scripts/snpCalling/utils/trimPolyN.py ../1_cleanReads/qualityFiltered_1.fq ../1_cleanReads/qualityFiltered_2.fq")
-				self.logArea.append("*  Analyzing first portion....")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/python ./extractSeqByRange.py finalScaffold.fasta finalScaffold 1 15001 f")
-				
-				self.logArea.append("*  *  Aligning reads to the assembly")
-				self.logArea.repaint()
-				
-				
-				
-
-				self.bowtiePE("finalScaffold_1_15001_f.txt","../1_cleanReads/qualityFiltered_1.fq","../1_cleanReads/qualityFiltered_2.fq",self.numThreadsCombo.currentText())
-
-				
-				self.logArea.append("*  *  Extracting mapped reads")
-				self.logArea.repaint()
-				
-				
-				
-
-				os.system(installationDirectory+"src/conda/bin/samtools view -bF 4 test_sorted.bam >mapped.bam 2>null")
-
-				
-				self.logArea.append("*  *  Adding gorup names")
-				self.logArea.repaint()
-				
-				
-				
-
-
-				os.system(installationDirectory+"src/conda/bin/picard AddOrReplaceReadGroups I=mapped.bam O=rg_added_sorted.bam SO=coordinate RGID=id RGLB=library RGPL=Ilumina RGPU=machine RGSM=Consensus")# >null 2>&1")
-				
-				self.logArea.append("*  *  Deduplicating")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/picard MarkDuplicates I=rg_added_sorted.bam O=dedupped.bam  CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT M=output.metrics >null 2>&1")
-				
-				self.logArea.append("*  *  Calling polymorphisms")
-				self.logArea.repaint()
-				
-				
-				os.system(installationDirectory+"src/conda/bin/picard CreateSequenceDictionary R=finalScaffold_1_15001_f.txt >null 2>&1")
-				os.system(installationDirectory+"src/conda/bin/samtools faidx finalScaffold_1_15001_f.txt")
-				#os.system(installationDirectory+"src/conda2/bin/bcftools mpileup -f finalScaffold_1_15001_f.txt dedupped.bam | "+installationDirectory+"src/conda2/bin/bcftools call -mv -Ov -o output.vcf")
-				#os.system(installationDirectory+"src/conda/bin/lofreq call-parallel --pp-threads "+self.numThreadsCombo.currentText()+" -q 30 -Q 30 --call-indels  -f finalScaffold_1_15001_f.txt -o output.vcf dedupped.bam")
-				#os.system("java -jar  "+installationDirectory+"resources/GenomeAnalysisTK.jar -T  HaplotypeCaller -R finalScaffold_1_15001_f.txt -I dedupped.bam  -o output.vcf -A StrandAlleleCountsBySample >null 2>&1")
-				os.system(installationDirectory+"src/conda/bin/samtools mpileup -f finalScaffold_1_15001_f.txt dedupped.bam > pileup.txt")
-				os.system(installationDirectory+"src/conda/bin/varscan mpileup2cns pileup.txt --variants --output-vcf 1 --strand-filter 0 > output.vcf")
-				os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/varscanFilter.py -i output.vcf -o output_filtered.vcf")
-				#os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/getMajorAllele.py output.vcf output_filtered.vcf >null 2>&1")
-				os.system(installationDirectory+"src/conda/bin/perl "+installationDirectory+"src/scripts/assembly/utils/vcf-sort output_filtered.vcf >temp.vcf ; mv temp.vcf output_filtered.vcf")
-				os.system(installationDirectory+"src/conda/bin/bgzip -c output_filtered.vcf > output_filtered.vcf.gz 2>null")
-				os.system(installationDirectory+"src/conda/bin/tabix output_filtered.vcf.gz >null 2>&1")
-				
-				self.logArea.append("*  *  Creating consensus")
-				self.logArea.repaint()
-				
-				
-				
-				os.system("cat finalScaffold_1_15001_f.txt | "+installationDirectory+"src/conda2/bin/bcftools consensus output_filtered.vcf.gz > finalScaffold_1_15001_f.txt_con.fasta 2>null")
-				os.system("mv output.vcf output_firstPortion.vcf")
-				os.system("mv output_filtered.vcf  output_firstPortion_filtered.vcf")
-				os.system("rm -f test*")
-				os.system("rm -f *.dict")
-				
-
-
-				
-				self.logArea.append("*  Analyzing second portion....")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/python ./extractSeqByRange.py finalScaffold.fasta finalScaffold 15001 "+str(assemblyLength -10000 )+" f")
-				
-				self.logArea.append("*  *  Aligning reads to the assembly")
-				self.logArea.repaint()
-				
-				
-				
-				self.bowtiePE("finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt","../1_cleanReads/qualityFiltered_1.fq","../1_cleanReads/qualityFiltered_2.fq",self.numThreadsCombo.currentText())
-				
-				self.logArea.append("*  *  Extracting mapped reads")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/samtools view -bF 4 test_sorted.bam >mapped.bam 2>null")
-				
-				self.logArea.append("*  *  Adding gorup names")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/picard AddOrReplaceReadGroups I=mapped.bam O=rg_added_sorted.bam SO=coordinate RGID=id RGLB=library RGPL=Ilumina RGPU=machine RGSM=Consensus >null 2>&1")
-				
-				self.logArea.append("*  *  Deduplicating")
-
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/picard MarkDuplicates I=rg_added_sorted.bam O=dedupped.bam  CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT M=output.metrics >null 2>&1")
-				
-				self.logArea.append("*  *  Calling polymorphisms")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/picard CreateSequenceDictionary R=finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt >null 2>&1")
-				os.system(installationDirectory+"src/conda/bin/samtools faidx finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt")
-				#os.system(installationDirectory+"src/conda2/bin/bcftools mpileup -f finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt dedupped.bam | "+installationDirectory+"src/conda2/bin/bcftools call -mv -Ov -o output.vcf")
-				#os.system(installationDirectory+"src/conda/bin/lofreq call-parallel  --pp-threads "+self.numThreadsCombo.currentText()+" -q 30 -Q 30 --call-indels  -f finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt -o output.vcf dedupped.bam")
-				os.system(installationDirectory+"src/conda/bin/samtools mpileup -f finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt dedupped.bam > pileup.txt")
-				os.system(installationDirectory+"src/conda/bin/varscan mpileup2cns pileup.txt --variants --output-vcf 1 --strand-filter 0  > output.vcf")
-				os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/varscanFilter.py -i output.vcf -o output_filtered.vcf")
-				os.system(installationDirectory+"src/conda/bin/perl "+installationDirectory+"src/scripts/assembly/utils/vcf-sort output_filtered.vcf >temp.vcf ; mv temp.vcf output_filtered.vcf")
-				os.system(installationDirectory+"src/conda/bin/bgzip -c output_filtered.vcf > output_filtered.vcf.gz 2>null")
-				os.system(installationDirectory+"src/conda/bin/tabix output_filtered.vcf.gz >null 2>&1")
-				#os.system("java -jar  "+installationDirectory+"resources/GenomeAnalysisTK.jar -T  HaplotypeCaller -R finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt -I dedupped.bam  -o output.vcf -A StrandAlleleCountsBySample >null 2>&1")
-				#os.system(installationDirectory+"resources/bgzip -c output.vcf_filtered.vcf > output.vcf_filtered.vcf.gz 2>null")
-				#os.system(installationDirectory+"resources/tabix output.vcf_filtered.vcf.gz >null 2>&1")
-				
-				self.logArea.append("*  *  Creating consensus")
-				self.logArea.repaint()
-				
-				
-				
-				os.system("cat finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt | "+installationDirectory+"src/conda2/bin/bcftools consensus output_filtered.vcf.gz > finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt_con.fasta 2>null")
-				os.system("mv output.vcf output_secondPortion.vcf")
-				os.system("mv output_filtered.vcf  output_filtered_secondPortion.vcf")
-				os.system("rm -f test*")
-				os.system("rm -f *.dict")
-
-
-				
-				self.logArea.append("*  Analyzing third portion....")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/python ./extractSeqByRange.py finalScaffold.fasta finalScaffold "+str(assemblyLength - 10000 )+" 2000000 f")
-				
-				self.logArea.append("*  *  Aligning reads to the assembly")
-				self.logArea.repaint()
-				
-				
-				
-				self.bowtiePE("finalScaffold_"+str(assemblyLength -10000 )+"_2000000_f.txt","../1_cleanReads/qualityFiltered_1.fq","../1_cleanReads/qualityFiltered_2.fq",self.numThreadsCombo.currentText())
-				
-				self.logArea.append("*  *  Extracting mapped reads")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/samtools view -bF 4 test_sorted.bam >mapped.bam 2>null")
-				
-				self.logArea.append("*  *  Adding gorup names")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/picard AddOrReplaceReadGroups I=mapped.bam O=rg_added_sorted.bam SO=coordinate RGID=id RGLB=library RGPL=Ilumina RGPU=machine RGSM=Consensus >null 2>&1")
-				
-				self.logArea.append("*  *  Deduplicating")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/picard MarkDuplicates I=rg_added_sorted.bam O=dedupped.bam  CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT M=output.metrics >null 2>&1")
-				
-				self.logArea.append("*  *  Calling polymorphisms")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/picard CreateSequenceDictionary R=finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt >null 2>&1")
-				os.system(installationDirectory+"src/conda/bin/samtools faidx finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt")
-				#os.system(installationDirectory+"src/conda2/bin/bcftools mpileup -f finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt dedupped.bam | "+installationDirectory+"src/conda2/bin/bcftools call -mv -Ov -o output.vcf")
-				#os.system(installationDirectory+"src/conda/bin/lofreq  call-parallel --pp-threads "+self.numThreadsCombo.currentText()+" -q 30 -Q 30 --call-indels -f finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt -o output.vcf dedupped.bam")
-				os.system(installationDirectory+"src/conda/bin/samtools mpileup -f finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt dedupped.bam > pileup.txt")
-				os.system(installationDirectory+"src/conda/bin/varscan mpileup2cns pileup.txt --variants --output-vcf 1 --strand-filter 0 > output.vcf")
-				os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/varscanFilter.py -i output.vcf -o output_filtered.vcf")
-				os.system(installationDirectory+"src/conda/bin/perl "+installationDirectory+"src/scripts/assembly/utils//vcf-sort output_filtered.vcf >temp.vcf ; mv temp.vcf output_filtered.vcf")
-				os.system(installationDirectory+"src/conda/bin/bgzip -c output_filtered.vcf > output_filtered.vcf.gz 2>null")
-				os.system(installationDirectory+"src/conda/bin/tabix output_filtered.vcf.gz >null 2>&1")
-				#os.system("java -jar  "+installationDirectory+"resources/GenomeAnalysisTK.jar -T  HaplotypeCaller -R finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt -I dedupped.bam  -o output.vcf -A StrandAlleleCountsBySample >null 2>&1")
-				#os.system(installationDirectory+"resources/filterVCF.py output.vcf >null 2>&1")
-				#os.system(installationDirectory+"resources/bgzip -c output.vcf_filtered.vcf > output.vcf_filtered.vcf.gz 2>null")
-				#os.system(installationDirectory+"resources/tabix output.vcf_filtered.vcf.gz >null 2>&1")
-				
-				self.logArea.append("*  *  Creating consensus")
-				self.logArea.repaint()
-				
-				
-				
-				os.system("cat finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt | "+installationDirectory+"src/conda2/bin/bcftools consensus output_filtered.vcf.gz > finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt_con.fasta 2>null")
-				os.system("mv output.vcf output_thirdPortion.vcf")
-				os.system("mv output_filtered.vcf  output_filtered_thirdPortion.vcf")
-				os.system("rm -f test*")
-				os.system("rm -f *.dict")
-
-
-
-				finalSequence = ""
-
-				for seq_record in SeqIO.parse("finalScaffold_1_15001_f.txt_con.fasta","fasta"):
-					finalSequence+=str(seq_record.seq)
-
-				for seq_record in SeqIO.parse("finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt_con.fasta","fasta"):
-					finalSequence+=str(seq_record.seq)
-
-				for seq_record in SeqIO.parse("finalScaffold_"+str(assemblyLength -10000 )+"_2000000_f.txt_con.fasta","fasta"):
-					finalSequence+=str(seq_record.seq)
-
-				outfile = open(projectName+"_genome.fasta","w")
-				outfile.write(">finalScaffold\n"+finalSequence)
-				outfile.close()
-
-
-
-				
-				self.logArea.append("First round of consensus calling completed on sample "+projectName+"!!")
-				self.logArea.repaint()
-				
-				
-				
-				now = datetime.datetime.now()
-				logFile.write("First consensus calline ended at "+now.strftime("%H:%M")+"\n\n")
-				os.chdir("../")
-			else:
-				if os.path.isfile("./4_createConsensus/"+projectName+"_genome.fasta")==False:
-					print("You chose not to run the consensus call step but "+projectName+"_genome.fasta  file is not there. Now exiting......")
-					logFile.write("You chose not to run the consensus call step but "+projectName+"_genome.fasta  file is not there. Now exiting......")
-					exit()
-
-
-
-			#***************************************************************
-			#********************** 5 Refine Consensus *********************
-			#***************************************************************
-			confFile.readline() #Read comment
-			refineAssembly = ((confFile.readline().rstrip()).split("\t"))[1]
-			if refineAssembly == "yes" or refineAssembly == "Yes":
-				now = datetime.datetime.now()
-				logFile.write("Assembly sequence refining started at "+now.strftime("%H:%M")+"\n\n")
-
-				os.system("mkdir -p 5_refineAssembly")
-				os.system("cp ./4_createConsensus/"+projectName+"_genome.fasta ./5_refineAssembly/finalScaffold.fasta")
-				os.system("cp "+installationDirectory+"src/scripts/assembly/utils/joinScaffolds_careful.py ./5_refineAssembly/")
-				os.system("cp "+installationDirectory+"src/scripts/assembly/utils/joinScaffolds.py ./5_refineAssembly/")
-				os.system("cp "+installationDirectory+"src/scripts/assembly/utils/joinScaffolds_trivial.py ./5_refineAssembly/")
-				os.system("cp "+installationDirectory+"src/scripts/utils/biomodule.py ./5_refineAssembly/")
-				os.system("cp "+installationDirectory+"src/scripts/assembly/utils/maskLowCoverage.py ./5_refineAssembly/")
-				os.system("cp "+installationDirectory+"src/scripts/assembly/utils/cleanSoftAndUnmapped.py ./5_refineAssembly/")
-				os.system("cp "+installationDirectory+"data/merlinReference/sequence_a.fasta ./5_refineAssembly/")
-				os.system("cp "+installationDirectory+"src/scripts/assembly/utils/revComp.py ./5_refineAssembly/")
-				os.chdir("5_refineAssembly")
-
-
-		
-
-				#Start the refine assembly algorithm
-
-				
-				self.logArea.append("\nRefining assembly on sample "+projectName)
-				self.logArea.repaint()
-				
-				
-				
-				notRefined = open("notRefined.txt","w")
-
-
-				os.system("cp finalScaffold.fasta newReference.fasta")
-				for seq_record in SeqIO.parse("finalScaffold.fasta","fasta"):
-							reference = str(seq_record.seq)
-
-				newBits = []
-				previousEnd = []
-				previousEnd.append(0)
-				eof = 0
-				while True and eof == 0:
-					for seq_record in SeqIO.parse("newReference.fasta","fasta"):
-							reference = str(seq_record.seq)
-
-					print("Performing Alignment....")
+					os.chdir("3_scaffoldsOrientation")
+					print("Calculating the average insert size......")
 					
-					self.logArea.append("*  Aligning reads on assembly")
+					self.logArea.append("*  Calculating the average insert size")
 					self.logArea.repaint()
 					
 					
 					
-					self.bwaPE("newReference.fasta",read1,read2,"test",self.numThreadsCombo.currentText(),"0.02") #Change here the number of threads
-					os.system(installationDirectory+"src/conda/bin/samtools faidx newReference.fasta >null 2>&1")
-					print("Calculating coverage on assembly....")
+					self.bowtiePE("../2_spadesAssembly/scaffolds.fasta","../1_cleanReads/qualityFiltered_1.fq","../1_cleanReads/qualityFiltered_2.fq",self.numThreadsCombo.currentText())
+					os.system(installationDirectory+"src/conda/bin/picard CollectInsertSizeMetrics I=test_sorted.bam  O=insert_size_metrics.txt H=insert_size_histogram.pdf M=0.5")
+					os.system("head -8 insert_size_metrics.txt | tail -2 | cut -f 6 | tail -1 >insert.size")
+					isize = open("insert.size")
+					insertSize = isize.readline().rstrip()
+					isize.close()
+					print("insertSize",insertSize)
 					
-					self.logArea.append("*  Looking for low coverage regions ")
+					self.logArea.append("*  Insert size = "+insertSize)
 					self.logArea.repaint()
 					
 					
 					
-					os.system(installationDirectory+"src/conda/bin/samtools mpileup -f newReference.fasta test_sorted.bam >finalPileup.txt 2>null")
+
+					print("\nAligning the contigs to the merlin reference gneome......")
 					
-					self.logArea.append("*  Masking low coverage regions ")
+					self.logArea.append("*  Aligning contigs to reference")
 					self.logArea.repaint()
 					
 					
 					
-					os.system(installationDirectory+"/src/conda/bin/python ./maskLowCoverage.py newReference.fasta finalPileup.txt ")
-					ranges = open("Nranges_smooth.txt")
-					line = ranges.readline().rstrip()
-					if not line:
-						break
-					fields = line.split("\t")
 
-					while int(fields[0]) <= previousEnd[len(previousEnd)-1]+50:
-						line = ranges.readline().rstrip()
-						if not line:
-							eof = 1
-							break
-						fields = line.split("\t")
 
-					previousEnd.append(int(fields[1]))
-					print("Refining the range",line)
-					print("Length assembly",len(reference),"From",fields[0],"To",fields[1])
-
+					os.system(installationDirectory+"src/conda/bin/python createCenterScaffold.py "+projectName+" "+installationDirectory+" "+insertSize+" "+self.numThreadsCombo.currentText())
+					os.system("cp newFinalScaffold.fasta longestScaffold.fasta ")
 					
-					self.logArea.append("*  Filling region "+line+"....")
+					self.logArea.append("*  Filling gaps from existing sequences")
 					self.logArea.repaint()
 					
 					
 					
-					if len(line)>2 and int(fields[0])>3000 and int(fields[0])< (len(reference) - 3000) and  int(fields[1])>3000 and int(fields[1])< (len(reference) - 3000):
-						os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/extractSeqByRange.py newReference.fasta finalScaffold "+str(int(fields[0])-1500)+" "+str(int(fields[0])-500)+" f")
-						os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/extractSeqByRange.py newReference.fasta finalScaffold "+str(int(fields[1])+500)+" "+str(int(fields[1])+1500)+" f")
+					os.system(installationDirectory+"src/conda/bin/python gapPrediction.py longestScaffold.fasta ../1_cleanReads/qualityFiltered_1.fq ../1_cleanReads/qualityFiltered_2.fq "+installationDirectory)
 
-					
-						print("Performing joinScaffold_careful algorithm on range",line,"....")
-						os.system(installationDirectory+"src/conda/bin/python joinScaffolds_careful.py join "+read1_toFill+"  "+read2_toFill+"  finalScaffold_"+str(int(fields[0])-1500)+"_"+str(int(fields[0])-500)+"_f.txt f finalScaffold_"+str(int(fields[1])+500)+"_"+str(int(fields[1])+1500)+"_f.txt f "+installationDirectory+" "+self.numThreadsCombo.currentText())
-						if os.path.isfile("joined_finalScaffold_"+str(int(fields[0])-1500)+"_"+str(int(fields[0])-500)+"_f.txt_finalScaffold_"+str(int(fields[1])+500)+"_"+str(int(fields[1])+1500)+"_f.txt")==False:
-							print("Refining range",fields[0],fields[1],"with joinScaffold_careful failed. Now trying joinScaffold on range",line,"....")
-							os.system(installationDirectory+"src/conda/bin/python joinScaffolds.py join "+read1_toFill+"  "+read2_toFill+"  finalScaffold_"+str(int(fields[0])-1500)+"_"+str(int(fields[0])-500)+"_f.txt f finalScaffold_"+str(int(fields[1])+500)+"_"+str(int(fields[1])+1500)+"_f.txt f "+installationDirectory+" "+self.numThreadsCombo.currentText())
-							if os.path.isfile("joined_finalScaffold_"+str(int(fields[0])-1500)+"_"+str(int(fields[0])-500)+"_f.txt_finalScaffold_"+str(int(fields[1])+500)+"_"+str(int(fields[1])+1500)+"_f.txt")==False:
-								print("Both alogrithms failed on range,",line)
-								print("Now performing 30 steps of joinScaffold trivial in both directions and recording the output")
-								#os.system(installationDirectory+"src/conda/bin/python joinScaffolds_trivial.py "+ read1_toFill+" "+read2_toFill+" finalScaffold_"+str(int(fields[0])-1500)+"_"+str(int(fields[0])-500)+"_f.txt f finalScaffold_"+str(int(fields[1])+500)+"_"+str(int(fields[1])+1500)+"_f.txt f 30 "+installationDirectory )
-								#os.system("mv joinScaffold_trivialSeq.fasta finalScaffold_"+str(int(fields[0])-1500)+"_"+str(int(fields[0])-500)+"_greedy.fasta ")
-								#os.system(installationDirectory+"src/conda/bin/python joinScaffolds_trivial.py "+ read1_toFill+" "+read2_toFill+" finalScaffold_"+str(int(fields[1])+500)+"_"+str(int(fields[1])+1500)+"_f.txt r finalScaffold_"+str(int(fields[0])-1500)+"_"+str(int(fields[0])-500)+"_f.txt r 30 "+installationDirectory )
-								#os.system(installationDirectory+"src/conda/bin/python revComp.py joinScaffold_trivialSeq.fasta >temp.fasta; mv temp.fasta joinScaffold_trivialSeq.fasta")
-								#os.system("mv joinScaffold_trivialSeq.fasta finalScaffold_"+str(int(fields[1])+500)+"_"+str(int(fields[1])+1500)+"_greedy.fasta")
-
-							else:
-								print("The algorithm joinScaffold was sucessful on range",line)
-								#break
-						else:
-							print("The algorithm joinScaffold_careful was sucessful on range",line)
-							#break
-
-
-						if os.path.isfile("joined_"+"finalScaffold_"+str(int(fields[0])-1500)+"_"+str(int(fields[0])-500)+"_f.txt_finalScaffold_"+str(int(fields[1])+500)+"_"+str(int(fields[1])+1500)+"_f.txt")==True:
-							for seq_record in SeqIO.parse("joined_"+"finalScaffold_"+str(int(fields[0])-1500)+"_"+str(int(fields[0])-500)+"_f.txt_finalScaffold_"+str(int(fields[1])+500)+"_"+str(int(fields[1])+1500)+"_f.txt","fasta"):
-								newBit = str(seq_record.seq)
-							if len(newBit) > 1600:
-								newReference = reference[:reference.find(newBit[:100])]+newBit+reference[reference.find(newBit[-100:])+100:]
-								newRef = open("newReference.fasta","w")
-								newRef.write(">finalScaffold\n"+newReference)
-								newRef.close()
-
-
-				noRef = []
-				infile2 = open("notRefined.txt")
-				while True:
-					line = infile2.readline()
-					if not line:
-						break
-					noRef.append(line)
-				infile2.close()
-				if len(noRef) >0:
-					logFile.write("WARNING! The following ranges were not closed during the assembly refining step:\n")
-					for line in noRef:
-						logFile.write(line)
-
-				for seq_record in SeqIO.parse("newReference.fasta","fasta"):
-					newRefSeq = str(seq_record.seq)
-				finalScaffoldFile = open("finalScaffold.fasta","w")
-				finalScaffoldFile.write(">finalScaffold\n"+newRefSeq)
-				finalScaffoldFile.close()
-
-
-				now = datetime.datetime.now()
-				logFile.write("Assembly sequence refining ended at "+now.strftime("%H:%M"))
-
-				os.chdir("../")
-
-			else:
-				if os.path.isfile("./5_refineAssembly/finalScaffold.fasta")==False:
-					print("You chose not to run the assembly refining step but the finalScaffold.fasta file is not there. Now exiting......")
-					logFile.write("You chose not to run the assembly refining step but the finalScaffold.fasta file is not there. Now exiting......")
-					exit()
-
-
-
-
-			#***************************************************************
-			#********************** 6 Create Consensus *********************
-			#***************************************************************
-			confFile.readline() #Read comment
-			perform1stConsensusCalling = ((confFile.readline().rstrip()).split("\t"))[1]
-			if perform1stConsensusCalling == "yes" or perform1stConsensusCalling == "Yes":
-				now = datetime.datetime.now()
-				logFile.write("Second consensus calling started at "+now.strftime("%H:%M")+"\n\n")
-				
-				self.logArea.append("\nSecond round of consensus calling on sample "+projectName)
-				self.logArea.repaint()
-				
-				
-				
-				os.system("mkdir 6_createConsensus")
-				os.system("cp 5_refineAssembly/finalScaffold.fasta ./6_createConsensus")
-				os.system("cp "+installationDirectory+"src/scripts/assembly/utils/extractSeqByRange.py ./6_createConsensus")
-				os.system("cp "+installationDirectory+"src/scripts/assembly/utils/revComp.py ./6_createConsensus/")
-				os.system("cp "+installationDirectory+"src/scripts/assembly/utils/completeGenome2.py ./6_createConsensus/")
-				os.system("cp "+installationDirectory+"src/scripts/utils/biomodule.py ./6_createConsensus/")
-				#os.system("cp "+installationDirectory+"src/scripts/utils/biomodule.py ./6_createConsensus/")
-
-
-				os.chdir("6_createConsensus")
-				#if os.path.isfile("../1_cleanReads/qualityFiltered_1.fq") == False:
-			#		os.system(installationDirectory+"src/conda/bin/prinseq-lite.pl -fastq ../1_cleanReads/qualityFiltered_1.fq  -fastq2 ../1_cleanReads/qualityFiltered_2.fq -min_qual_mean 25 -trim_qual_right 30 -trim_ns_right 20  -trim_qual_window 5 -trim_qual_step 1 -min_len 80 -out_bad null -out_good ../1_cleanReads/prinSeqReads")
-			#		os.system(installationDirectory+"/src/conda/bin/python "+installationDirectory+"src/scripts/snpCalling/utils/trimPolyN.py ../1_cleanReads/qualityFiltered_1.fq ../1_cleanReads/qualityFiltered_2.fq")
-
-				#Attempts five and three prime ends reconstruction
-				os.system(installationDirectory+"src/conda/bin/python completeGenome2.py "+installationDirectory+"  finalScaffold.fasta 0")
-				if os.path.isfile("newGenome2.fasta") == True:
-					for seq_record in SeqIO.parse("newGenome2.fasta","fasta"):
-						newGenome2seq = str(seq_record.seq)
-						break
-					
-					if "N" in newGenome2seq:
-						os.system("head -40000 ../1_cleanReads/qualityFiltered_1.fq >subsample_1.fastq")
-						os.system("head -40000 ../1_cleanReads/qualityFiltered_2.fq >subsample_2.fastq")
-						self.bowtiePE("newGenome2.fasta","subsample_1.fastq","subsample_2.fastq",self.numThreadsCombo.currentText())
-						os.system(installationDirectory+"src/conda/bin/picard CollectInsertSizeMetrics I=test_sorted.bam  O=insert_size_metrics.txt H=insert_size_histogram.pdf M=0.5")
-						os.system("head -8 insert_size_metrics.txt | tail -2 | cut -f 6 | tail -1 >insert.size")
-						isize = open("insert.size")
-						insertSize = isize.readline().rstrip()
-						isize.close()
-						print(insertSize)
+					finalScaffoldFile = open("finalScaffold.fasta","w")
+					finalScaffoldFile.write(">finalScaffold\n")
+					gapPresent = 0
+					for seq_record in SeqIO.parse("filledGenome.fasta","fasta"):
+						finalScaffoldFile.write(str(seq_record.seq))
+						if "N" in str(seq_record.seq):
+							gapPresent = 1
+					finalScaffoldFile.close()
+					if gapPresent == 1:
+						
+						self.logArea.append("*  Filling gaps with existing sequences")
+						self.logArea.repaint()
+						
+						
+						
 						gfFile = open("gapfillerlib.txt","w")
 						gfFile.write("lib1 bwa ../1_cleanReads/qualityFiltered_1.fq ../1_cleanReads/qualityFiltered_2.fq "+ insertSize+" 0.25 FR")
 						gfFile.close()
-						os.system(installationDirectory+"src/conda/bin/perl "+installationDirectory+"src/scripts/assembly/utils/GapFiller -q "+installationDirectory+" -l gapfillerlib.txt -s newGenome2.fasta -T "+self.numThreadsCombo.currentText())
-						os.system("cp ./standard_output/standard_output.gapfilled.final.fa newGenome2.fasta")
+						os.system(installationDirectory+"src/conda/bin/perl "+installationDirectory+"src/scripts/assembly/utils/GapFiller -q "+installationDirectory+" -l gapfillerlib.txt -s filledGenome.fasta -T "+self.numThreadsCombo.currentText())
+						os.system("mv finalScaffold.fasta finalScaffold.fasta_beforeGapfilling")
+						os.system("cp standard_output/standard_output.gapfilled.final.fa ./finalScaffold.fasta")
+
+					now = datetime.datetime.now()
+					
+					self.logArea.append("Scaffolding completed on sample "+projectName+"!!")
+					self.logArea.repaint()
+					
+					
+					
+					logFile.write("Scaffolding finishes at "+now.strftime("%H:%M"))
+					if self.intermediateFilesCombo.currentText() == "No":
+						os.system("rm -rf *.bam *.sam *.bt2 *txt *ap* cent* filled* hcmv* join* last* long* merlin* null *fastq sb* sequence* standard* temp* two* *.py found* new*")
+					os.chdir("../")
+				else:
+					
+					self.logArea.append("\nNo scaffolding required for sample "+projectName)
+					self.logArea.repaint()
+					
+					
+					
+					if os.path.isfile("./3_scaffoldsOrientation/finalScaffold.fasta") == False:
+						print("You chose not to run the scaffolding step but finalScaffold.fasta file is not there. Now exiting......")
+						logFile.write("You chose not to run the scaffolding step but finalScaffold.fasta file is not there. Now exiting......")
+						exit()
+
+
+
+				#***************************************************************
+				#********************** 4 Create Consensus *********************
+				#***************************************************************
+				confFile.readline() #Read comment
+				perform1stConsensusCalling = ((confFile.readline().rstrip()).split("\t"))[1]
+				if perform1stConsensusCalling == "yes" or perform1stConsensusCalling == "Yes":
+					now = datetime.datetime.now()
+					logFile.write("First consensus calling started at "+now.strftime("%H:%M")+"\n\n")
+					
+					self.logArea.append("\nFirst round of consensus calling on sample "+projectName)
+					self.logArea.repaint()
+					
+					
+					
+					os.system("mkdir 4_createConsensus")
+					os.system("cp ./3_scaffoldsOrientation/finalScaffold.fasta ./4_createConsensus")
+					#os.system("cp "+installationDirectory+"assembly/scripts/joinConsensus.py ./4_createConsensus")
+					#os.system("cp "+installationDirectory+"assembly/scripts/hcmvConsensusCallPipeline ./4_createConsensus")
+					#os.system("cp "+installationDirectory+"assembly/scripts/createConsensus ./4_createConsensus")
+					os.system("cp "+installationDirectory+"src/scripts/assembly/utils/extractSeqByRange.py ./4_createConsensus")
+					#os.system("cp "+installationDirectory+"assembly/scripts/libdeflate.so ./4_createConsensus")
+					os.chdir("4_createConsensus")
+
+					for seq_record in SeqIO.parse("finalScaffold.fasta","fasta"):
+						assemblyLength = len(str(seq_record.seq))
+
+
+					#os.system(installationDirectory+"src/conda/bin/prinseq-lite.pl -fastq ../1_cleanReads/qualityFiltered_1.fq  -fastq2 ../1_cleanReads/qualityFiltered_2.fq -min_qual_mean 25 -trim_qual_right 30 -trim_ns_right 20  -trim_qual_window 5 -trim_qual_step 1 -min_len 80 -out_bad null -out_good ../1_cleanReads/prinSeqReads")
+					#os.system(installationDirectory+"/src/conda/bin/python "+installationDirectory+"src/scripts/snpCalling/utils/trimPolyN.py ../1_cleanReads/qualityFiltered_1.fq ../1_cleanReads/qualityFiltered_2.fq")
+					self.logArea.append("*  Analyzing first portion....")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/python ./extractSeqByRange.py finalScaffold.fasta finalScaffold 1 15001 f")
+					
+					self.logArea.append("*  *  Aligning reads to the assembly")
+					self.logArea.repaint()
+					
+					
+					
+
+					self.bowtiePE("finalScaffold_1_15001_f.txt","../1_cleanReads/qualityFiltered_1.fq","../1_cleanReads/qualityFiltered_2.fq",self.numThreadsCombo.currentText())
+
+					
+					self.logArea.append("*  *  Extracting mapped reads")
+					self.logArea.repaint()
+					
+					
+					
+
+					os.system(installationDirectory+"src/conda/bin/samtools view -bF 4 test_sorted.bam >mapped.bam 2>null")
+
+					
+					self.logArea.append("*  *  Adding gorup names")
+					self.logArea.repaint()
+					
+					
+					
+
+
+					os.system(installationDirectory+"src/conda/bin/picard AddOrReplaceReadGroups I=mapped.bam O=rg_added_sorted.bam SO=coordinate RGID=id RGLB=library RGPL=Ilumina RGPU=machine RGSM=Consensus")# >null 2>&1")
+					
+					self.logArea.append("*  *  Deduplicating")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/picard MarkDuplicates I=rg_added_sorted.bam O=dedupped.bam  CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT M=output.metrics >null 2>&1")
+					
+					self.logArea.append("*  *  Calling polymorphisms")
+					self.logArea.repaint()
+					
+					
+					os.system(installationDirectory+"src/conda/bin/picard CreateSequenceDictionary R=finalScaffold_1_15001_f.txt >null 2>&1")
+					os.system(installationDirectory+"src/conda/bin/samtools faidx finalScaffold_1_15001_f.txt")
+					#os.system(installationDirectory+"src/conda2/bin/bcftools mpileup -f finalScaffold_1_15001_f.txt dedupped.bam | "+installationDirectory+"src/conda2/bin/bcftools call -mv -Ov -o output.vcf")
+					#os.system(installationDirectory+"src/conda/bin/lofreq call-parallel --pp-threads "+self.numThreadsCombo.currentText()+" -q 30 -Q 30 --call-indels  -f finalScaffold_1_15001_f.txt -o output.vcf dedupped.bam")
+					#os.system("java -jar  "+installationDirectory+"resources/GenomeAnalysisTK.jar -T  HaplotypeCaller -R finalScaffold_1_15001_f.txt -I dedupped.bam  -o output.vcf -A StrandAlleleCountsBySample >null 2>&1")
+					os.system(installationDirectory+"src/conda/bin/samtools mpileup -f finalScaffold_1_15001_f.txt dedupped.bam > pileup.txt")
+					os.system(installationDirectory+"src/conda/bin/varscan mpileup2cns pileup.txt --variants --output-vcf 1 --strand-filter 0 > output.vcf")
+					os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/varscanFilter.py -i output.vcf -o output_filtered.vcf")
+					#os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/getMajorAllele.py output.vcf output_filtered.vcf >null 2>&1")
+					os.system(installationDirectory+"src/conda/bin/perl "+installationDirectory+"src/scripts/assembly/utils/vcf-sort output_filtered.vcf >temp.vcf ; mv temp.vcf output_filtered.vcf")
+					os.system(installationDirectory+"src/conda/bin/bgzip -c output_filtered.vcf > output_filtered.vcf.gz 2>null")
+					os.system(installationDirectory+"src/conda/bin/tabix output_filtered.vcf.gz >null 2>&1")
+					
+					self.logArea.append("*  *  Creating consensus")
+					self.logArea.repaint()
+					
+					
+					
+					os.system("cat finalScaffold_1_15001_f.txt | "+installationDirectory+"src/conda2/bin/bcftools consensus output_filtered.vcf.gz > finalScaffold_1_15001_f.txt_con.fasta 2>null")
+					os.system("mv output.vcf output_firstPortion.vcf")
+					os.system("mv output_filtered.vcf  output_firstPortion_filtered.vcf")
+					os.system("rm -f test*")
+					os.system("rm -f *.dict")
+					
+
+
+					
+					self.logArea.append("*  Analyzing second portion....")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/python ./extractSeqByRange.py finalScaffold.fasta finalScaffold 15001 "+str(assemblyLength -10000 )+" f")
+					
+					self.logArea.append("*  *  Aligning reads to the assembly")
+					self.logArea.repaint()
+					
+					
+					
+					self.bowtiePE("finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt","../1_cleanReads/qualityFiltered_1.fq","../1_cleanReads/qualityFiltered_2.fq",self.numThreadsCombo.currentText())
+					
+					self.logArea.append("*  *  Extracting mapped reads")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/samtools view -bF 4 test_sorted.bam >mapped.bam 2>null")
+					
+					self.logArea.append("*  *  Adding gorup names")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/picard AddOrReplaceReadGroups I=mapped.bam O=rg_added_sorted.bam SO=coordinate RGID=id RGLB=library RGPL=Ilumina RGPU=machine RGSM=Consensus >null 2>&1")
+					
+					self.logArea.append("*  *  Deduplicating")
+
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/picard MarkDuplicates I=rg_added_sorted.bam O=dedupped.bam  CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT M=output.metrics >null 2>&1")
+					
+					self.logArea.append("*  *  Calling polymorphisms")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/picard CreateSequenceDictionary R=finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt >null 2>&1")
+					os.system(installationDirectory+"src/conda/bin/samtools faidx finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt")
+					#os.system(installationDirectory+"src/conda2/bin/bcftools mpileup -f finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt dedupped.bam | "+installationDirectory+"src/conda2/bin/bcftools call -mv -Ov -o output.vcf")
+					#os.system(installationDirectory+"src/conda/bin/lofreq call-parallel  --pp-threads "+self.numThreadsCombo.currentText()+" -q 30 -Q 30 --call-indels  -f finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt -o output.vcf dedupped.bam")
+					os.system(installationDirectory+"src/conda/bin/samtools mpileup -f finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt dedupped.bam > pileup.txt")
+					os.system(installationDirectory+"src/conda/bin/varscan mpileup2cns pileup.txt --variants --output-vcf 1 --strand-filter 0  > output.vcf")
+					os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/varscanFilter.py -i output.vcf -o output_filtered.vcf")
+					os.system(installationDirectory+"src/conda/bin/perl "+installationDirectory+"src/scripts/assembly/utils/vcf-sort output_filtered.vcf >temp.vcf ; mv temp.vcf output_filtered.vcf")
+					os.system(installationDirectory+"src/conda/bin/bgzip -c output_filtered.vcf > output_filtered.vcf.gz 2>null")
+					os.system(installationDirectory+"src/conda/bin/tabix output_filtered.vcf.gz >null 2>&1")
+					#os.system("java -jar  "+installationDirectory+"resources/GenomeAnalysisTK.jar -T  HaplotypeCaller -R finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt -I dedupped.bam  -o output.vcf -A StrandAlleleCountsBySample >null 2>&1")
+					#os.system(installationDirectory+"resources/bgzip -c output.vcf_filtered.vcf > output.vcf_filtered.vcf.gz 2>null")
+					#os.system(installationDirectory+"resources/tabix output.vcf_filtered.vcf.gz >null 2>&1")
+					
+					self.logArea.append("*  *  Creating consensus")
+					self.logArea.repaint()
+					
+					
+					
+					os.system("cat finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt | "+installationDirectory+"src/conda2/bin/bcftools consensus output_filtered.vcf.gz > finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt_con.fasta 2>null")
+					os.system("mv output.vcf output_secondPortion.vcf")
+					os.system("mv output_filtered.vcf  output_filtered_secondPortion.vcf")
+					os.system("rm -f test*")
+					os.system("rm -f *.dict")
+
+
+					
+					self.logArea.append("*  Analyzing third portion....")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/python ./extractSeqByRange.py finalScaffold.fasta finalScaffold "+str(assemblyLength - 10000 )+" 2000000 f")
+					
+					self.logArea.append("*  *  Aligning reads to the assembly")
+					self.logArea.repaint()
+					
+					
+					
+					self.bowtiePE("finalScaffold_"+str(assemblyLength -10000 )+"_2000000_f.txt","../1_cleanReads/qualityFiltered_1.fq","../1_cleanReads/qualityFiltered_2.fq",self.numThreadsCombo.currentText())
+					
+					self.logArea.append("*  *  Extracting mapped reads")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/samtools view -bF 4 test_sorted.bam >mapped.bam 2>null")
+					
+					self.logArea.append("*  *  Adding gorup names")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/picard AddOrReplaceReadGroups I=mapped.bam O=rg_added_sorted.bam SO=coordinate RGID=id RGLB=library RGPL=Ilumina RGPU=machine RGSM=Consensus >null 2>&1")
+					
+					self.logArea.append("*  *  Deduplicating")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/picard MarkDuplicates I=rg_added_sorted.bam O=dedupped.bam  CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT M=output.metrics >null 2>&1")
+					
+					self.logArea.append("*  *  Calling polymorphisms")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/picard CreateSequenceDictionary R=finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt >null 2>&1")
+					os.system(installationDirectory+"src/conda/bin/samtools faidx finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt")
+					#os.system(installationDirectory+"src/conda2/bin/bcftools mpileup -f finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt dedupped.bam | "+installationDirectory+"src/conda2/bin/bcftools call -mv -Ov -o output.vcf")
+					#os.system(installationDirectory+"src/conda/bin/lofreq  call-parallel --pp-threads "+self.numThreadsCombo.currentText()+" -q 30 -Q 30 --call-indels -f finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt -o output.vcf dedupped.bam")
+					os.system(installationDirectory+"src/conda/bin/samtools mpileup -f finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt dedupped.bam > pileup.txt")
+					os.system(installationDirectory+"src/conda/bin/varscan mpileup2cns pileup.txt --variants --output-vcf 1 --strand-filter 0 > output.vcf")
+					os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/varscanFilter.py -i output.vcf -o output_filtered.vcf")
+					os.system(installationDirectory+"src/conda/bin/perl "+installationDirectory+"src/scripts/assembly/utils//vcf-sort output_filtered.vcf >temp.vcf ; mv temp.vcf output_filtered.vcf")
+					os.system(installationDirectory+"src/conda/bin/bgzip -c output_filtered.vcf > output_filtered.vcf.gz 2>null")
+					os.system(installationDirectory+"src/conda/bin/tabix output_filtered.vcf.gz >null 2>&1")
+					#os.system("java -jar  "+installationDirectory+"resources/GenomeAnalysisTK.jar -T  HaplotypeCaller -R finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt -I dedupped.bam  -o output.vcf -A StrandAlleleCountsBySample >null 2>&1")
+					#os.system(installationDirectory+"resources/filterVCF.py output.vcf >null 2>&1")
+					#os.system(installationDirectory+"resources/bgzip -c output.vcf_filtered.vcf > output.vcf_filtered.vcf.gz 2>null")
+					#os.system(installationDirectory+"resources/tabix output.vcf_filtered.vcf.gz >null 2>&1")
+					
+					self.logArea.append("*  *  Creating consensus")
+					self.logArea.repaint()
+					
+					
+					
+					os.system("cat finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt | "+installationDirectory+"src/conda2/bin/bcftools consensus output_filtered.vcf.gz > finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt_con.fasta 2>null")
+					os.system("mv output.vcf output_thirdPortion.vcf")
+					os.system("mv output_filtered.vcf  output_filtered_thirdPortion.vcf")
+					os.system("rm -f test*")
+					os.system("rm -f *.dict")
+
+
+
+					finalSequence = ""
+
+					for seq_record in SeqIO.parse("finalScaffold_1_15001_f.txt_con.fasta","fasta"):
+						finalSequence+=str(seq_record.seq)
+
+					for seq_record in SeqIO.parse("finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt_con.fasta","fasta"):
+						finalSequence+=str(seq_record.seq)
+
+					for seq_record in SeqIO.parse("finalScaffold_"+str(assemblyLength -10000 )+"_2000000_f.txt_con.fasta","fasta"):
+						finalSequence+=str(seq_record.seq)
+
+					outfile = open(projectName+"_genome.fasta","w")
+					outfile.write(">finalScaffold\n"+finalSequence)
+					outfile.close()
+
+
+
+					
+					self.logArea.append("First round of consensus calling completed on sample "+projectName+"!!")
+					self.logArea.repaint()
+					
+					
+					
+					now = datetime.datetime.now()
+					logFile.write("First consensus calline ended at "+now.strftime("%H:%M")+"\n\n")
+					os.chdir("../")
+				else:
+					if os.path.isfile("./4_createConsensus/"+projectName+"_genome.fasta")==False:
+						print("You chose not to run the consensus call step but "+projectName+"_genome.fasta  file is not there. Now exiting......")
+						logFile.write("You chose not to run the consensus call step but "+projectName+"_genome.fasta  file is not there. Now exiting......")
+						exit()
+
+
+
+				#***************************************************************
+				#********************** 5 Refine Consensus *********************
+				#***************************************************************
+				confFile.readline() #Read comment
+				refineAssembly = ((confFile.readline().rstrip()).split("\t"))[1]
+				if refineAssembly == "yes" or refineAssembly == "Yes":
+					now = datetime.datetime.now()
+					logFile.write("Assembly sequence refining started at "+now.strftime("%H:%M")+"\n\n")
+
+					os.system("mkdir -p 5_refineAssembly")
+					os.system("cp ./4_createConsensus/"+projectName+"_genome.fasta ./5_refineAssembly/finalScaffold.fasta")
+					os.system("cp "+installationDirectory+"src/scripts/assembly/utils/joinScaffolds_careful.py ./5_refineAssembly/")
+					os.system("cp "+installationDirectory+"src/scripts/assembly/utils/joinScaffolds.py ./5_refineAssembly/")
+					os.system("cp "+installationDirectory+"src/scripts/assembly/utils/joinScaffolds_trivial.py ./5_refineAssembly/")
+					os.system("cp "+installationDirectory+"src/scripts/utils/biomodule.py ./5_refineAssembly/")
+					os.system("cp "+installationDirectory+"src/scripts/assembly/utils/maskLowCoverage.py ./5_refineAssembly/")
+					os.system("cp "+installationDirectory+"src/scripts/assembly/utils/cleanSoftAndUnmapped.py ./5_refineAssembly/")
+					os.system("cp "+installationDirectory+"data/merlinReference/sequence_a.fasta ./5_refineAssembly/")
+					os.system("cp "+installationDirectory+"src/scripts/assembly/utils/revComp.py ./5_refineAssembly/")
+					os.chdir("5_refineAssembly")
+
+
+			
+
+					#Start the refine assembly algorithm
+
+					
+					self.logArea.append("\nRefining assembly on sample "+projectName)
+					self.logArea.repaint()
+					
+					
+					
+					notRefined = open("notRefined.txt","w")
+
+
+					os.system("cp finalScaffold.fasta newReference.fasta")
+					for seq_record in SeqIO.parse("finalScaffold.fasta","fasta"):
+								reference = str(seq_record.seq)
+
+					newBits = []
+					previousEnd = []
+					previousEnd.append(0)
+					eof = 0
+					while True and eof == 0:
+						for seq_record in SeqIO.parse("newReference.fasta","fasta"):
+								reference = str(seq_record.seq)
+
+						print("Performing Alignment....")
+						
+						self.logArea.append("*  Aligning reads on assembly")
+						self.logArea.repaint()
+						
+						
+						
+						self.bwaPE("newReference.fasta",read1,read2,"test",self.numThreadsCombo.currentText(),"0.02") #Change here the number of threads
+						os.system(installationDirectory+"src/conda/bin/samtools faidx newReference.fasta >null 2>&1")
+						print("Calculating coverage on assembly....")
+						
+						self.logArea.append("*  Looking for low coverage regions ")
+						self.logArea.repaint()
+						
+						
+						
+						os.system(installationDirectory+"src/conda/bin/samtools mpileup -f newReference.fasta test_sorted.bam >finalPileup.txt 2>null")
+						
+						self.logArea.append("*  Masking low coverage regions ")
+						self.logArea.repaint()
+						
+						
+						
+						os.system(installationDirectory+"/src/conda/bin/python ./maskLowCoverage.py newReference.fasta finalPileup.txt ")
+						ranges = open("Nranges_smooth.txt")
+						line = ranges.readline().rstrip()
+						if not line:
+							break
+						fields = line.split("\t")
+
+						while int(fields[0]) <= previousEnd[len(previousEnd)-1]+50:
+							line = ranges.readline().rstrip()
+							if not line:
+								eof = 1
+								break
+							fields = line.split("\t")
+
+						previousEnd.append(int(fields[1]))
+						print("Refining the range",line)
+						print("Length assembly",len(reference),"From",fields[0],"To",fields[1])
+
+						
+						self.logArea.append("*  Filling region "+line+"....")
+						self.logArea.repaint()
+						
+						
+						
+						if len(line)>2 and int(fields[0])>3000 and int(fields[0])< (len(reference) - 3000) and  int(fields[1])>3000 and int(fields[1])< (len(reference) - 3000):
+							os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/extractSeqByRange.py newReference.fasta finalScaffold "+str(int(fields[0])-1500)+" "+str(int(fields[0])-500)+" f")
+							os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/extractSeqByRange.py newReference.fasta finalScaffold "+str(int(fields[1])+500)+" "+str(int(fields[1])+1500)+" f")
+
+						
+							print("Performing joinScaffold_careful algorithm on range",line,"....")
+							os.system(installationDirectory+"src/conda/bin/python joinScaffolds_careful.py join "+read1_toFill+"  "+read2_toFill+"  finalScaffold_"+str(int(fields[0])-1500)+"_"+str(int(fields[0])-500)+"_f.txt f finalScaffold_"+str(int(fields[1])+500)+"_"+str(int(fields[1])+1500)+"_f.txt f "+installationDirectory+" "+self.numThreadsCombo.currentText())
+							if os.path.isfile("joined_finalScaffold_"+str(int(fields[0])-1500)+"_"+str(int(fields[0])-500)+"_f.txt_finalScaffold_"+str(int(fields[1])+500)+"_"+str(int(fields[1])+1500)+"_f.txt")==False:
+								print("Refining range",fields[0],fields[1],"with joinScaffold_careful failed. Now trying joinScaffold on range",line,"....")
+								os.system(installationDirectory+"src/conda/bin/python joinScaffolds.py join "+read1_toFill+"  "+read2_toFill+"  finalScaffold_"+str(int(fields[0])-1500)+"_"+str(int(fields[0])-500)+"_f.txt f finalScaffold_"+str(int(fields[1])+500)+"_"+str(int(fields[1])+1500)+"_f.txt f "+installationDirectory+" "+self.numThreadsCombo.currentText())
+								if os.path.isfile("joined_finalScaffold_"+str(int(fields[0])-1500)+"_"+str(int(fields[0])-500)+"_f.txt_finalScaffold_"+str(int(fields[1])+500)+"_"+str(int(fields[1])+1500)+"_f.txt")==False:
+									print("Both alogrithms failed on range,",line)
+									print("Now performing 30 steps of joinScaffold trivial in both directions and recording the output")
+									#os.system(installationDirectory+"src/conda/bin/python joinScaffolds_trivial.py "+ read1_toFill+" "+read2_toFill+" finalScaffold_"+str(int(fields[0])-1500)+"_"+str(int(fields[0])-500)+"_f.txt f finalScaffold_"+str(int(fields[1])+500)+"_"+str(int(fields[1])+1500)+"_f.txt f 30 "+installationDirectory )
+									#os.system("mv joinScaffold_trivialSeq.fasta finalScaffold_"+str(int(fields[0])-1500)+"_"+str(int(fields[0])-500)+"_greedy.fasta ")
+									#os.system(installationDirectory+"src/conda/bin/python joinScaffolds_trivial.py "+ read1_toFill+" "+read2_toFill+" finalScaffold_"+str(int(fields[1])+500)+"_"+str(int(fields[1])+1500)+"_f.txt r finalScaffold_"+str(int(fields[0])-1500)+"_"+str(int(fields[0])-500)+"_f.txt r 30 "+installationDirectory )
+									#os.system(installationDirectory+"src/conda/bin/python revComp.py joinScaffold_trivialSeq.fasta >temp.fasta; mv temp.fasta joinScaffold_trivialSeq.fasta")
+									#os.system("mv joinScaffold_trivialSeq.fasta finalScaffold_"+str(int(fields[1])+500)+"_"+str(int(fields[1])+1500)+"_greedy.fasta")
+
+								else:
+									print("The algorithm joinScaffold was sucessful on range",line)
+									#break
+							else:
+								print("The algorithm joinScaffold_careful was sucessful on range",line)
+								#break
+
+
+							if os.path.isfile("joined_"+"finalScaffold_"+str(int(fields[0])-1500)+"_"+str(int(fields[0])-500)+"_f.txt_finalScaffold_"+str(int(fields[1])+500)+"_"+str(int(fields[1])+1500)+"_f.txt")==True:
+								for seq_record in SeqIO.parse("joined_"+"finalScaffold_"+str(int(fields[0])-1500)+"_"+str(int(fields[0])-500)+"_f.txt_finalScaffold_"+str(int(fields[1])+500)+"_"+str(int(fields[1])+1500)+"_f.txt","fasta"):
+									newBit = str(seq_record.seq)
+								if len(newBit) > 1600:
+									newReference = reference[:reference.find(newBit[:100])]+newBit+reference[reference.find(newBit[-100:])+100:]
+									newRef = open("newReference.fasta","w")
+									newRef.write(">finalScaffold\n"+newReference)
+									newRef.close()
+
+
+					noRef = []
+					infile2 = open("notRefined.txt")
+					while True:
+						line = infile2.readline()
+						if not line:
+							break
+						noRef.append(line)
+					infile2.close()
+					if len(noRef) >0:
+						logFile.write("WARNING! The following ranges were not closed during the assembly refining step:\n")
+						for line in noRef:
+							logFile.write(line)
+
+					for seq_record in SeqIO.parse("newReference.fasta","fasta"):
+						newRefSeq = str(seq_record.seq)
+					finalScaffoldFile = open("finalScaffold.fasta","w")
+					finalScaffoldFile.write(">finalScaffold\n"+newRefSeq)
+					finalScaffoldFile.close()
+
+
+					now = datetime.datetime.now()
+					logFile.write("Assembly sequence refining ended at "+now.strftime("%H:%M"))
+
+					os.chdir("../")
+
+				else:
+					if os.path.isfile("./5_refineAssembly/finalScaffold.fasta")==False:
+						print("You chose not to run the assembly refining step but the finalScaffold.fasta file is not there. Now exiting......")
+						logFile.write("You chose not to run the assembly refining step but the finalScaffold.fasta file is not there. Now exiting......")
+						exit()
+
+
+
+
+				#***************************************************************
+				#********************** 6 Create Consensus *********************
+				#***************************************************************
+				confFile.readline() #Read comment
+				perform1stConsensusCalling = ((confFile.readline().rstrip()).split("\t"))[1]
+				if perform1stConsensusCalling == "yes" or perform1stConsensusCalling == "Yes":
+					now = datetime.datetime.now()
+					logFile.write("Second consensus calling started at "+now.strftime("%H:%M")+"\n\n")
+					
+					self.logArea.append("\nSecond round of consensus calling on sample "+projectName)
+					self.logArea.repaint()
+					
+					
+					
+					os.system("mkdir 6_createConsensus")
+					os.system("cp 5_refineAssembly/finalScaffold.fasta ./6_createConsensus")
+					os.system("cp "+installationDirectory+"src/scripts/assembly/utils/extractSeqByRange.py ./6_createConsensus")
+					os.system("cp "+installationDirectory+"src/scripts/assembly/utils/revComp.py ./6_createConsensus/")
+					os.system("cp "+installationDirectory+"src/scripts/assembly/utils/completeGenome2.py ./6_createConsensus/")
+					os.system("cp "+installationDirectory+"src/scripts/utils/biomodule.py ./6_createConsensus/")
+					#os.system("cp "+installationDirectory+"src/scripts/utils/biomodule.py ./6_createConsensus/")
+
+
+					os.chdir("6_createConsensus")
+					#if os.path.isfile("../1_cleanReads/qualityFiltered_1.fq") == False:
+				#		os.system(installationDirectory+"src/conda/bin/prinseq-lite.pl -fastq ../1_cleanReads/qualityFiltered_1.fq  -fastq2 ../1_cleanReads/qualityFiltered_2.fq -min_qual_mean 25 -trim_qual_right 30 -trim_ns_right 20  -trim_qual_window 5 -trim_qual_step 1 -min_len 80 -out_bad null -out_good ../1_cleanReads/prinSeqReads")
+				#		os.system(installationDirectory+"/src/conda/bin/python "+installationDirectory+"src/scripts/snpCalling/utils/trimPolyN.py ../1_cleanReads/qualityFiltered_1.fq ../1_cleanReads/qualityFiltered_2.fq")
+
+					#Attempts five and three prime ends reconstruction
+					os.system(installationDirectory+"src/conda/bin/python completeGenome2.py "+installationDirectory+"  finalScaffold.fasta 0")
+					if os.path.isfile("newGenome2.fasta") == True:
 						for seq_record in SeqIO.parse("newGenome2.fasta","fasta"):
 							newGenome2seq = str(seq_record.seq)
 							break
+						
+						if "N" in newGenome2seq:
+							os.system("head -40000 ../1_cleanReads/qualityFiltered_1.fq >subsample_1.fastq")
+							os.system("head -40000 ../1_cleanReads/qualityFiltered_2.fq >subsample_2.fastq")
+							self.bowtiePE("newGenome2.fasta","subsample_1.fastq","subsample_2.fastq",self.numThreadsCombo.currentText())
+							os.system(installationDirectory+"src/conda/bin/picard CollectInsertSizeMetrics I=test_sorted.bam  O=insert_size_metrics.txt H=insert_size_histogram.pdf M=0.5")
+							os.system("head -8 insert_size_metrics.txt | tail -2 | cut -f 6 | tail -1 >insert.size")
+							isize = open("insert.size")
+							insertSize = isize.readline().rstrip()
+							isize.close()
+							print(insertSize)
+							gfFile = open("gapfillerlib.txt","w")
+							gfFile.write("lib1 bwa ../1_cleanReads/qualityFiltered_1.fq ../1_cleanReads/qualityFiltered_2.fq "+ insertSize+" 0.25 FR")
+							gfFile.close()
+							os.system(installationDirectory+"src/conda/bin/perl "+installationDirectory+"src/scripts/assembly/utils/GapFiller -q "+installationDirectory+" -l gapfillerlib.txt -s newGenome2.fasta -T "+self.numThreadsCombo.currentText())
+							os.system("cp ./standard_output/standard_output.gapfilled.final.fa newGenome2.fasta")
+							for seq_record in SeqIO.parse("newGenome2.fasta","fasta"):
+								newGenome2seq = str(seq_record.seq)
+								break
+						
+						os.system("mv finalScaffold.fasta finalScaffold_noEnds.fasta")
+						fs = open("finalScaffold.fasta","w")
+						fs.write(">finalScaffold\n"+newGenome2seq)
+						fs.close()
+
+
+					for seq_record in SeqIO.parse("finalScaffold.fasta","fasta"):
+						assemblyLength = len(str(seq_record.seq))
+
+
 					
-					os.system("mv finalScaffold.fasta finalScaffold_noEnds.fasta")
-					fs = open("finalScaffold.fasta","w")
-					fs.write(">finalScaffold\n"+newGenome2seq)
-					fs.close()
+					self.logArea.append("*  Analyzing first portion....")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/python extractSeqByRange.py finalScaffold.fasta finalScaffold 1 15001 f")
+					
+					self.logArea.append("*  *  Aligning reads to the assembly")
+					self.logArea.repaint()
+					
+					
+					
+
+					self.bowtiePE("finalScaffold_1_15001_f.txt","../1_cleanReads/qualityFiltered_1.fq","../1_cleanReads/qualityFiltered_2.fq",self.numThreadsCombo.currentText())
+					#self.bwaPE("finalScaffold_1_15001_f.txt","../1_cleanReads/qualityFiltered_1.fq","../1_cleanReads/qualityFiltered_2.fq","test",self.numThreadsCombo.currentText(),"0.06")
+					
+					self.logArea.append("*  *  Extracting mapped reads")
+					self.logArea.repaint()
+					
+					
+					
+
+					os.system(installationDirectory+"src/conda/bin/samtools view -bF 4 test_sorted.bam >mapped.bam 2>null")
+
+					
+					self.logArea.append("*  *  Adding gorup names")
+					self.logArea.repaint()
+					
+					
+					
 
 
-				for seq_record in SeqIO.parse("finalScaffold.fasta","fasta"):
-					assemblyLength = len(str(seq_record.seq))
+					os.system(installationDirectory+"src/conda/bin/picard AddOrReplaceReadGroups I=mapped.bam O=rg_added_sorted.bam SO=coordinate RGID=id RGLB=library RGPL=Ilumina RGPU=machine RGSM=Consensus")# >null 2>&1")
+					
+					self.logArea.append("*  *  Deduplicating")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/picard MarkDuplicates I=rg_added_sorted.bam O=dedupped.bam  CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT M=output.metrics >null 2>&1")
+					
+					self.logArea.append("*  *  Calling polymorphisms")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/picard CreateSequenceDictionary R=finalScaffold_1_15001_f.txt >null 2>&1")
+					os.system(installationDirectory+"src/conda/bin/samtools faidx finalScaffold_1_15001_f.txt")
+					#os.system(installationDirectory+"src/conda2/bin/bcftools mpileup -f finalScaffold_1_15001_f.txt dedupped.bam | "+installationDirectory+"src/conda2/bin/bcftools call -mv -Ov -o output.vcf")
+					#os.system(installationDirectory+"src/conda/bin/lofreq  call-parallel --pp-threads "+self.numThreadsCombo.currentText()+" -q 30 -Q 30 --call-indels -f finalScaffold_1_15001_f.txt -o output.vcf dedupped.bam")
+					#os.system("java -jar  "+installationDirectory+"resources/GenomeAnalysisTK.jar -T  HaplotypeCaller -R finalScaffold_1_15001_f.txt -I dedupped.bam  -o output.vcf -A StrandAlleleCountsBySample >null 2>&1")
+					os.system(installationDirectory+"src/conda/bin/samtools mpileup -f finalScaffold_1_15001_f.txt dedupped.bam > pileup.txt")
+					os.system(installationDirectory+"src/conda/bin/varscan mpileup2cns pileup.txt --variants --output-vcf 1 --strand-filter 0 > output.vcf")
+					os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/varscanFilter.py -i output.vcf -o output_filtered.vcf")
+					os.system(installationDirectory+"src/conda/bin/perl "+installationDirectory+"src/scripts/assembly/utils/vcf-sort output_filtered.vcf >temp.vcf ; mv temp.vcf output_filtered.vcf")
+					os.system(installationDirectory+"src/conda/bin/bgzip -c output_filtered.vcf > output_filtered.vcf.gz 2>null")
+					os.system(installationDirectory+"src/conda/bin/tabix output_filtered.vcf.gz >null 2>&1")
+					
+					self.logArea.append("*  *  Creating consensus")
+					self.logArea.repaint()
+					
+					
+					
+					os.system("cat finalScaffold_1_15001_f.txt | "+installationDirectory+"src/conda2/bin/bcftools consensus output_filtered.vcf.gz > finalScaffold_1_15001_f.txt_con.fasta 2>null")
+					os.system("mv output.vcf output_firstPortion.vcf")
+					os.system("mv output_filtered.vcf  output_firstPortion_filtered.vcf")
+					os.system("rm -f test*")
+					os.system("rm -f *.dict")
 
+
+					
+					self.logArea.append("*  Analyzing second portion....")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/python extractSeqByRange.py finalScaffold.fasta finalScaffold 15001 "+str(assemblyLength -10000 )+" f")
+					
+					self.logArea.append("*  *  Aligning reads to the assembly")
+					self.logArea.repaint()
+					
+					
+					
+					self.bowtiePE("finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt","../1_cleanReads/qualityFiltered_1.fq","../1_cleanReads/qualityFiltered_2.fq",self.numThreadsCombo.currentText())
+					#self.bwaPE("finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt","../1_cleanReads/qualityFiltered_1.fq","../1_cleanReads/qualityFiltered_2.fq","test",self.numThreadsCombo.currentText(),"0.06")
+
+					self.logArea.append("*  *  Extracting mapped reads")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/samtools view -bF 4 test_sorted.bam >mapped.bam 2>null")
+					
+					self.logArea.append("*  *  Adding gorup names")
+					self.logArea.repaint()
+					
+					
+					os.system(installationDirectory+"src/conda/bin/picard AddOrReplaceReadGroups I=mapped.bam O=rg_added_sorted.bam SO=coordinate RGID=id RGLB=library RGPL=Ilumina RGPU=machine RGSM=Consensus >null 2>&1")
+					
+					self.logArea.append("*  *  Deduplicating")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/picard MarkDuplicates I=rg_added_sorted.bam O=dedupped.bam  CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT M=output.metrics >null 2>&1")
+					
+					self.logArea.append("*  *  Calling polymorphisms")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/picard CreateSequenceDictionary R=finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt >null 2>&1")
+					os.system(installationDirectory+"src/conda/bin/samtools faidx finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt")
+					#os.system(installationDirectory+"src/conda2/bin/bcftools mpileup -f finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt dedupped.bam | "+installationDirectory+"src/conda2/bin/bcftools call -mv -Ov -o output.vcf")
+					#os.system(installationDirectory+"src/conda/bin/lofreq  call-parallel --pp-threads "+self.numThreadsCombo.currentText()+" -q 30 -Q 30 --call-indels -f finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt -o output.vcf dedupped.bam")
+					#os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/getMajorAllele.py output.vcf output_filtered.vcf >null 2>&1")
+					os.system(installationDirectory+"src/conda/bin/samtools mpileup -f finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt dedupped.bam > pileup.txt")
+					os.system(installationDirectory+"src/conda/bin/varscan mpileup2cns pileup.txt --variants --output-vcf 1 --strand-filter 0 > output.vcf")
+					os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/varscanFilter.py -i output.vcf -o output_filtered.vcf")
+					os.system(installationDirectory+"src/conda/bin/perl "+installationDirectory+"src/scripts/assembly/utils/vcf-sort output_filtered.vcf >temp.vcf ; mv temp.vcf output_filtered.vcf")
+					os.system(installationDirectory+"src/conda/bin/bgzip -c output_filtered.vcf > output_filtered.vcf.gz 2>null")
+					os.system(installationDirectory+"src/conda/bin/tabix output_filtered.vcf.gz >null 2>&1")
+					#os.system("java -jar  "+installationDirectory+"resources/GenomeAnalysisTK.jar -T  HaplotypeCaller -R finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt -I dedupped.bam  -o output.vcf -A StrandAlleleCountsBySample >null 2>&1")
+					#os.system(installationDirectory+"resources/bgzip -c output.vcf_filtered.vcf > output.vcf_filtered.vcf.gz 2>null")
+					#os.system(installationDirectory+"resources/tabix output.vcf_filtered.vcf.gz >null 2>&1")
+					
+					self.logArea.append("*  *  Creating consensus")
+					self.logArea.repaint()
+					
+					
+					
+					os.system("cat finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt | "+installationDirectory+"src/conda2/bin/bcftools consensus output_filtered.vcf.gz > finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt_con.fasta 2>null")
+					os.system("mv output.vcf output_secondPortion.vcf")
+					os.system("mv output_filtered.vcf  output_filtered_secondPortion.vcf")
+					os.system("rm -f test*")
+					os.system("rm -f *.dict")
+
+
+
+					
+					self.logArea.append("*  Analyzing third portion....")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/python extractSeqByRange.py finalScaffold.fasta finalScaffold "+str(assemblyLength - 10000 )+" 2000000 f")
+					
+					self.logArea.append("*  *  Aligning reads to the assembly")
+					self.logArea.repaint()
+					
+					
+					
+					self.bowtiePE("finalScaffold_"+str(assemblyLength -10000 )+"_2000000_f.txt","../1_cleanReads/qualityFiltered_1.fq","../1_cleanReads/qualityFiltered_2.fq",self.numThreadsCombo.currentText())
+					#self.bwaPE("finalScaffold_"+str(assemblyLength -10000 )+"_2000000_f.txt","../1_cleanReads/qualityFiltered_1.fq","../1_cleanReads/qualityFiltered_2.fq","test",self.numThreadsCombo.currentText(),"0.06")
+					self.logArea.append("*  *  Extracting mapped reads")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/samtools view -bF 4 test_sorted.bam >mapped.bam 2>null")
+					
+					self.logArea.append("*  *  Adding gorup names")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/picard AddOrReplaceReadGroups I=mapped.bam O=rg_added_sorted.bam SO=coordinate RGID=id RGLB=library RGPL=Ilumina RGPU=machine RGSM=Consensus >null 2>&1")
+					
+					self.logArea.append("*  *  Deduplicating")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/picard MarkDuplicates I=rg_added_sorted.bam O=dedupped.bam  CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT M=output.metrics >null 2>&1")
+					
+					self.logArea.append("*  *  Calling polymorphisms")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/picard CreateSequenceDictionary R=finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt >null 2>&1")
+					os.system(installationDirectory+"src/conda/bin/samtools faidx finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt")
+					#os.system(installationDirectory+"src/conda2/bin/bcftools mpileup -f finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt dedupped.bam | "+installationDirectory+"src/conda2/bin/bcftools call -mv -Ov -o output.vcf")
+					#os.system(installationDirectory+"src/conda/bin/lofreq  call-parallel --pp-threads "+self.numThreadsCombo.currentText()+" -q 30 -Q 30 --call-indels -f finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt -o output.vcf dedupped.bam")
+					#os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/getMajorAllele.py output.vcf output_filtered.vcf >null 2>&1")
+					os.system(installationDirectory+"src/conda/bin/samtools mpileup -f finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt dedupped.bam > pileup.txt")
+					os.system(installationDirectory+"src/conda/bin/varscan mpileup2cns pileup.txt --variants --output-vcf 1 --strand-filter 0 > output.vcf")
+					os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/varscanFilter.py -i output.vcf -o output_filtered.vcf")
+					os.system(installationDirectory+"src/conda/bin/perl "+installationDirectory+"src/scripts/assembly/utils/vcf-sort output_filtered.vcf >temp.vcf ; mv temp.vcf output_filtered.vcf")
+					os.system(installationDirectory+"src/conda/bin/bgzip -c output_filtered.vcf > output_filtered.vcf.gz 2>null")
+					os.system(installationDirectory+"src/conda/bin/tabix output_filtered.vcf.gz >null 2>&1")
+					#os.system("java -jar  "+installationDirectory+"resources/GenomeAnalysisTK.jar -T  HaplotypeCaller -R finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt -I dedupped.bam  -o output.vcf -A StrandAlleleCountsBySample >null 2>&1")
+					#os.system(installationDirectory+"resources/filterVCF.py output.vcf >null 2>&1")
+					#os.system(installationDirectory+"resources/bgzip -c output.vcf_filtered.vcf > output.vcf_filtered.vcf.gz 2>null")
+					#os.system(installationDirectory+"resources/tabix output.vcf_filtered.vcf.gz >null 2>&1")
+					
+					self.logArea.append("*  *  Creating consensus")
+					self.logArea.repaint()
+					
+					
+					
+					os.system("cat finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt | "+installationDirectory+"src/conda2/bin/bcftools consensus output_filtered.vcf.gz > finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt_con.fasta 2>null")
+					os.system("mv output.vcf output_thirdPortion.vcf")
+					os.system("mv output_filtered.vcf  output_filtered_thirdPortion.vcf")
+					os.system("rm -f test*")
+					os.system("rm -f *.dict")
+
+
+
+					finalSequence = ""
+
+					for seq_record in SeqIO.parse("finalScaffold_1_15001_f.txt_con.fasta","fasta"):
+						finalSequence+=str(seq_record.seq)
+
+					for seq_record in SeqIO.parse("finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt_con.fasta","fasta"):
+						finalSequence+=str(seq_record.seq)
+
+					for seq_record in SeqIO.parse("finalScaffold_"+str(assemblyLength -10000 )+"_2000000_f.txt_con.fasta","fasta"):
+						finalSequence+=str(seq_record.seq)
+
+					outfile = open(projectName+"_genome.fasta","w")
+					outfile.write(">finalScaffold_"+projectName+"\n"+finalSequence+"\n")
+					outfile.close()
+					
+
+
+					self.logArea.append("*  Last consensus calling....")
+					self.logArea.repaint()
+					
+					
+					
+
+					self.logArea.append("*  *  Aligning reads to the assembly")
+					self.logArea.repaint()
+					
+					
+					
+					self.bowtiePE(projectName+"_genome.fasta","../1_cleanReads/qualityFiltered_1.fq","../1_cleanReads/qualityFiltered_2.fq",self.numThreadsCombo.currentText())
+					#self.bwaPE(projectName+"_genome.fasta","../1_cleanReads/qualityFiltered_1.fq","../1_cleanReads/qualityFiltered_2.fq","test",self.numThreadsCombo.currentText(),"0.06")
+
+					self.logArea.append("*  *  Extracting mapped reads")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/samtools view -bF 4 test_sorted.bam >mapped.bam 2>null")
+					
+					self.logArea.append("*  *  Adding gorup names")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/picard AddOrReplaceReadGroups I=mapped.bam O=rg_added_sorted.bam SO=coordinate RGID=id RGLB=library RGPL=Ilumina RGPU=machine RGSM=Consensus >null 2>&1")
+					
+					self.logArea.append("*  *  Deduplicating")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/picard MarkDuplicates I=rg_added_sorted.bam O=dedupped.bam  CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT M=output.metrics >null 2>&1")
+					
+					self.logArea.append("*  *  Calling polymorphisms")
+					self.logArea.repaint()
+					
+					
+					
+					os.system(installationDirectory+"src/conda/bin/picard CreateSequenceDictionary R="+projectName+"_genome.fasta >null 2>&1")
+					os.system(installationDirectory+"src/conda/bin/samtools faidx "+projectName+"_genome.fasta")
+					os.system(installationDirectory+"src/conda/bin/samtools view -b -h -F 1024 dedupped.bam > dedupped_nodup.bam")
+					os.system(installationDirectory+"src/conda/bin/bam2fastq -o deduppedReads#.fastq --aligned --no-unaligned --force dedupped_nodup.bam")
+					os.system(installationDirectory+"src/conda/bin/samtools mpileup -f "+projectName+"_genome.fasta dedupped.bam > pileup.txt")
+					os.system(installationDirectory+"src/conda/bin/varscan mpileup2cns pileup.txt --variants --output-vcf 1 --strand-filter 0 > output.vcf")
+					os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/varscanFilter.py -i output.vcf -o output_filtered.vcf -1 deduppedReads_1.fastq -g 1 -2 deduppedReads_2.fastq -r "+projectName+"_genome.fasta -p "+installationDirectory )
+					os.system(installationDirectory+"src/conda/bin/perl "+installationDirectory+"src/scripts/assembly/utils/vcf-sort output_filtered.vcf >temp.vcf ; mv temp.vcf output_filtered.vcf")
+					os.system(installationDirectory+"src/conda/bin/bgzip -c output_filtered.vcf > output_filtered.vcf.gz 2>null")
+					os.system(installationDirectory+"src/conda/bin/tabix output_filtered.vcf.gz >null 2>&1")
+					self.logArea.append("*  *  Creating consensus")
+					self.logArea.repaint()
+					
+					
+					
+					os.system("cat "+projectName+"_genome.fasta | "+installationDirectory+"src/conda2/bin/bcftools consensus output_filtered.vcf.gz > "+projectName+"_genome.fasta_con.fasta 2>null")
+					os.system("mv output.vcf completeGenome.vcf")
+					os.system("mv output_filtered.vcf  completeGenome_filtered.vcf")
+					os.system("rm -f test*")
+					os.system("rm -f *.dict")
+
+
+
+
+					
+					self.logArea.append("Second round of consensus calling completed on sample "+projectName+"!!\n")
+					self.logArea.repaint()
+					
+					
+					os.system("cp "+projectName+"_genome.fasta_con.fasta "+workingDirectory+"/"+projectName+"_genome.fasta")
+					now = datetime.datetime.now()
+					logFile.write("Second consensus calline ended at "+now.strftime("%H:%M")+"\n\n")
+					os.chdir("../")
+				else:
+					if os.path.isfile("./6_createConsensus/"+projectName+"_genome.fasta")==False:
+						print("You chose not to run the consensus call step but "+projectName+"_genome.fasta  file is not there. Now exiting......")
+						logFile.write("You chose not to run the consensus call step but "+projectName+"_genome.fasta  file is not there. Now exiting......")
+						exit()
 
 				
-				self.logArea.append("*  Analyzing first portion....")
+				self.logArea.append("\n\nAll processes completed on sample "+projectName+"!!\n")
 				self.logArea.repaint()
 				
 				
 				
-				os.system(installationDirectory+"src/conda/bin/python extractSeqByRange.py finalScaffold.fasta finalScaffold 1 15001 f")
-				
-				self.logArea.append("*  *  Aligning reads to the assembly")
-				self.logArea.repaint()
-				
-				
-				
-
-				self.bowtiePE("finalScaffold_1_15001_f.txt","../1_cleanReads/qualityFiltered_1.fq","../1_cleanReads/qualityFiltered_2.fq",self.numThreadsCombo.currentText())
-				#self.bwaPE("finalScaffold_1_15001_f.txt","../1_cleanReads/qualityFiltered_1.fq","../1_cleanReads/qualityFiltered_2.fq","test",self.numThreadsCombo.currentText(),"0.06")
-				
-				self.logArea.append("*  *  Extracting mapped reads")
-				self.logArea.repaint()
-				
-				
-				
-
-				os.system(installationDirectory+"src/conda/bin/samtools view -bF 4 test_sorted.bam >mapped.bam 2>null")
-
-				
-				self.logArea.append("*  *  Adding gorup names")
-				self.logArea.repaint()
-				
-				
-				
-
-
-				os.system(installationDirectory+"src/conda/bin/picard AddOrReplaceReadGroups I=mapped.bam O=rg_added_sorted.bam SO=coordinate RGID=id RGLB=library RGPL=Ilumina RGPU=machine RGSM=Consensus")# >null 2>&1")
-				
-				self.logArea.append("*  *  Deduplicating")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/picard MarkDuplicates I=rg_added_sorted.bam O=dedupped.bam  CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT M=output.metrics >null 2>&1")
-				
-				self.logArea.append("*  *  Calling polymorphisms")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/picard CreateSequenceDictionary R=finalScaffold_1_15001_f.txt >null 2>&1")
-				os.system(installationDirectory+"src/conda/bin/samtools faidx finalScaffold_1_15001_f.txt")
-				#os.system(installationDirectory+"src/conda2/bin/bcftools mpileup -f finalScaffold_1_15001_f.txt dedupped.bam | "+installationDirectory+"src/conda2/bin/bcftools call -mv -Ov -o output.vcf")
-				#os.system(installationDirectory+"src/conda/bin/lofreq  call-parallel --pp-threads "+self.numThreadsCombo.currentText()+" -q 30 -Q 30 --call-indels -f finalScaffold_1_15001_f.txt -o output.vcf dedupped.bam")
-				#os.system("java -jar  "+installationDirectory+"resources/GenomeAnalysisTK.jar -T  HaplotypeCaller -R finalScaffold_1_15001_f.txt -I dedupped.bam  -o output.vcf -A StrandAlleleCountsBySample >null 2>&1")
-				os.system(installationDirectory+"src/conda/bin/samtools mpileup -f finalScaffold_1_15001_f.txt dedupped.bam > pileup.txt")
-				os.system(installationDirectory+"src/conda/bin/varscan mpileup2cns pileup.txt --variants --output-vcf 1 --strand-filter 0 > output.vcf")
-				os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/varscanFilter.py -i output.vcf -o output_filtered.vcf")
-				os.system(installationDirectory+"src/conda/bin/perl "+installationDirectory+"src/scripts/assembly/utils/vcf-sort output_filtered.vcf >temp.vcf ; mv temp.vcf output_filtered.vcf")
-				os.system(installationDirectory+"src/conda/bin/bgzip -c output_filtered.vcf > output_filtered.vcf.gz 2>null")
-				os.system(installationDirectory+"src/conda/bin/tabix output_filtered.vcf.gz >null 2>&1")
-				
-				self.logArea.append("*  *  Creating consensus")
-				self.logArea.repaint()
-				
-				
-				
-				os.system("cat finalScaffold_1_15001_f.txt | "+installationDirectory+"src/conda2/bin/bcftools consensus output_filtered.vcf.gz > finalScaffold_1_15001_f.txt_con.fasta 2>null")
-				os.system("mv output.vcf output_firstPortion.vcf")
-				os.system("mv output_filtered.vcf  output_firstPortion_filtered.vcf")
-				os.system("rm -f test*")
-				os.system("rm -f *.dict")
-
-
-				
-				self.logArea.append("*  Analyzing second portion....")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/python extractSeqByRange.py finalScaffold.fasta finalScaffold 15001 "+str(assemblyLength -10000 )+" f")
-				
-				self.logArea.append("*  *  Aligning reads to the assembly")
-				self.logArea.repaint()
-				
-				
-				
-				self.bowtiePE("finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt","../1_cleanReads/qualityFiltered_1.fq","../1_cleanReads/qualityFiltered_2.fq",self.numThreadsCombo.currentText())
-				#self.bwaPE("finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt","../1_cleanReads/qualityFiltered_1.fq","../1_cleanReads/qualityFiltered_2.fq","test",self.numThreadsCombo.currentText(),"0.06")
-
-				self.logArea.append("*  *  Extracting mapped reads")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/samtools view -bF 4 test_sorted.bam >mapped.bam 2>null")
-				
-				self.logArea.append("*  *  Adding gorup names")
-				self.logArea.repaint()
-				
-				
-				os.system(installationDirectory+"src/conda/bin/picard AddOrReplaceReadGroups I=mapped.bam O=rg_added_sorted.bam SO=coordinate RGID=id RGLB=library RGPL=Ilumina RGPU=machine RGSM=Consensus >null 2>&1")
-				
-				self.logArea.append("*  *  Deduplicating")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/picard MarkDuplicates I=rg_added_sorted.bam O=dedupped.bam  CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT M=output.metrics >null 2>&1")
-				
-				self.logArea.append("*  *  Calling polymorphisms")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/picard CreateSequenceDictionary R=finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt >null 2>&1")
-				os.system(installationDirectory+"src/conda/bin/samtools faidx finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt")
-				#os.system(installationDirectory+"src/conda2/bin/bcftools mpileup -f finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt dedupped.bam | "+installationDirectory+"src/conda2/bin/bcftools call -mv -Ov -o output.vcf")
-				#os.system(installationDirectory+"src/conda/bin/lofreq  call-parallel --pp-threads "+self.numThreadsCombo.currentText()+" -q 30 -Q 30 --call-indels -f finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt -o output.vcf dedupped.bam")
-				#os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/getMajorAllele.py output.vcf output_filtered.vcf >null 2>&1")
-				os.system(installationDirectory+"src/conda/bin/samtools mpileup -f finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt dedupped.bam > pileup.txt")
-				os.system(installationDirectory+"src/conda/bin/varscan mpileup2cns pileup.txt --variants --output-vcf 1 --strand-filter 0 > output.vcf")
-				os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/varscanFilter.py -i output.vcf -o output_filtered.vcf")
-				os.system(installationDirectory+"src/conda/bin/perl "+installationDirectory+"src/scripts/assembly/utils/vcf-sort output_filtered.vcf >temp.vcf ; mv temp.vcf output_filtered.vcf")
-				os.system(installationDirectory+"src/conda/bin/bgzip -c output_filtered.vcf > output_filtered.vcf.gz 2>null")
-				os.system(installationDirectory+"src/conda/bin/tabix output_filtered.vcf.gz >null 2>&1")
-				#os.system("java -jar  "+installationDirectory+"resources/GenomeAnalysisTK.jar -T  HaplotypeCaller -R finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt -I dedupped.bam  -o output.vcf -A StrandAlleleCountsBySample >null 2>&1")
-				#os.system(installationDirectory+"resources/bgzip -c output.vcf_filtered.vcf > output.vcf_filtered.vcf.gz 2>null")
-				#os.system(installationDirectory+"resources/tabix output.vcf_filtered.vcf.gz >null 2>&1")
-				
-				self.logArea.append("*  *  Creating consensus")
-				self.logArea.repaint()
-				
-				
-				
-				os.system("cat finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt | "+installationDirectory+"src/conda2/bin/bcftools consensus output_filtered.vcf.gz > finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt_con.fasta 2>null")
-				os.system("mv output.vcf output_secondPortion.vcf")
-				os.system("mv output_filtered.vcf  output_filtered_secondPortion.vcf")
-				os.system("rm -f test*")
-				os.system("rm -f *.dict")
-
-
-
-				
-				self.logArea.append("*  Analyzing third portion....")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/python extractSeqByRange.py finalScaffold.fasta finalScaffold "+str(assemblyLength - 10000 )+" 2000000 f")
-				
-				self.logArea.append("*  *  Aligning reads to the assembly")
-				self.logArea.repaint()
-				
-				
-				
-				self.bowtiePE("finalScaffold_"+str(assemblyLength -10000 )+"_2000000_f.txt","../1_cleanReads/qualityFiltered_1.fq","../1_cleanReads/qualityFiltered_2.fq",self.numThreadsCombo.currentText())
-				#self.bwaPE("finalScaffold_"+str(assemblyLength -10000 )+"_2000000_f.txt","../1_cleanReads/qualityFiltered_1.fq","../1_cleanReads/qualityFiltered_2.fq","test",self.numThreadsCombo.currentText(),"0.06")
-				self.logArea.append("*  *  Extracting mapped reads")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/samtools view -bF 4 test_sorted.bam >mapped.bam 2>null")
-				
-				self.logArea.append("*  *  Adding gorup names")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/picard AddOrReplaceReadGroups I=mapped.bam O=rg_added_sorted.bam SO=coordinate RGID=id RGLB=library RGPL=Ilumina RGPU=machine RGSM=Consensus >null 2>&1")
-				
-				self.logArea.append("*  *  Deduplicating")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/picard MarkDuplicates I=rg_added_sorted.bam O=dedupped.bam  CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT M=output.metrics >null 2>&1")
-				
-				self.logArea.append("*  *  Calling polymorphisms")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/picard CreateSequenceDictionary R=finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt >null 2>&1")
-				os.system(installationDirectory+"src/conda/bin/samtools faidx finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt")
-				#os.system(installationDirectory+"src/conda2/bin/bcftools mpileup -f finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt dedupped.bam | "+installationDirectory+"src/conda2/bin/bcftools call -mv -Ov -o output.vcf")
-				#os.system(installationDirectory+"src/conda/bin/lofreq  call-parallel --pp-threads "+self.numThreadsCombo.currentText()+" -q 30 -Q 30 --call-indels -f finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt -o output.vcf dedupped.bam")
-				#os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/getMajorAllele.py output.vcf output_filtered.vcf >null 2>&1")
-				os.system(installationDirectory+"src/conda/bin/samtools mpileup -f finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt dedupped.bam > pileup.txt")
-				os.system(installationDirectory+"src/conda/bin/varscan mpileup2cns pileup.txt --variants --output-vcf 1 --strand-filter 0 > output.vcf")
-				os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/varscanFilter.py -i output.vcf -o output_filtered.vcf")
-				os.system(installationDirectory+"src/conda/bin/perl "+installationDirectory+"src/scripts/assembly/utils/vcf-sort output_filtered.vcf >temp.vcf ; mv temp.vcf output_filtered.vcf")
-				os.system(installationDirectory+"src/conda/bin/bgzip -c output_filtered.vcf > output_filtered.vcf.gz 2>null")
-				os.system(installationDirectory+"src/conda/bin/tabix output_filtered.vcf.gz >null 2>&1")
-				#os.system("java -jar  "+installationDirectory+"resources/GenomeAnalysisTK.jar -T  HaplotypeCaller -R finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt -I dedupped.bam  -o output.vcf -A StrandAlleleCountsBySample >null 2>&1")
-				#os.system(installationDirectory+"resources/filterVCF.py output.vcf >null 2>&1")
-				#os.system(installationDirectory+"resources/bgzip -c output.vcf_filtered.vcf > output.vcf_filtered.vcf.gz 2>null")
-				#os.system(installationDirectory+"resources/tabix output.vcf_filtered.vcf.gz >null 2>&1")
-				
-				self.logArea.append("*  *  Creating consensus")
-				self.logArea.repaint()
-				
-				
-				
-				os.system("cat finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt | "+installationDirectory+"src/conda2/bin/bcftools consensus output_filtered.vcf.gz > finalScaffold_"+str(assemblyLength - 10000 )+"_2000000_f.txt_con.fasta 2>null")
-				os.system("mv output.vcf output_thirdPortion.vcf")
-				os.system("mv output_filtered.vcf  output_filtered_thirdPortion.vcf")
-				os.system("rm -f test*")
-				os.system("rm -f *.dict")
-
-
-
-				finalSequence = ""
-
-				for seq_record in SeqIO.parse("finalScaffold_1_15001_f.txt_con.fasta","fasta"):
-					finalSequence+=str(seq_record.seq)
-
-				for seq_record in SeqIO.parse("finalScaffold_15001_"+str(assemblyLength -10000 )+"_f.txt_con.fasta","fasta"):
-					finalSequence+=str(seq_record.seq)
-
-				for seq_record in SeqIO.parse("finalScaffold_"+str(assemblyLength -10000 )+"_2000000_f.txt_con.fasta","fasta"):
-					finalSequence+=str(seq_record.seq)
-
-				outfile = open(projectName+"_genome.fasta","w")
-				outfile.write(">finalScaffold_"+projectName+"\n"+finalSequence+"\n")
-				outfile.close()
-				
-
-
-				self.logArea.append("*  Last consensus calling....")
-				self.logArea.repaint()
-				
-				
-				
-
-				self.logArea.append("*  *  Aligning reads to the assembly")
-				self.logArea.repaint()
-				
-				
-				
-				self.bowtiePE(projectName+"_genome.fasta","../1_cleanReads/qualityFiltered_1.fq","../1_cleanReads/qualityFiltered_2.fq",self.numThreadsCombo.currentText())
-				#self.bwaPE(projectName+"_genome.fasta","../1_cleanReads/qualityFiltered_1.fq","../1_cleanReads/qualityFiltered_2.fq","test",self.numThreadsCombo.currentText(),"0.06")
-
-				self.logArea.append("*  *  Extracting mapped reads")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/samtools view -bF 4 test_sorted.bam >mapped.bam 2>null")
-				
-				self.logArea.append("*  *  Adding gorup names")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/picard AddOrReplaceReadGroups I=mapped.bam O=rg_added_sorted.bam SO=coordinate RGID=id RGLB=library RGPL=Ilumina RGPU=machine RGSM=Consensus >null 2>&1")
-				
-				self.logArea.append("*  *  Deduplicating")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/picard MarkDuplicates I=rg_added_sorted.bam O=dedupped.bam  CREATE_INDEX=true VALIDATION_STRINGENCY=SILENT M=output.metrics >null 2>&1")
-				
-				self.logArea.append("*  *  Calling polymorphisms")
-				self.logArea.repaint()
-				
-				
-				
-				os.system(installationDirectory+"src/conda/bin/picard CreateSequenceDictionary R="+projectName+"_genome.fasta >null 2>&1")
-				os.system(installationDirectory+"src/conda/bin/samtools faidx "+projectName+"_genome.fasta")
-				os.system(installationDirectory+"src/conda/bin/samtools view -b -h -F 1024 dedupped.bam > dedupped_nodup.bam")
-				os.system(installationDirectory+"src/conda/bin/bam2fastq -o deduppedReads#.fastq --aligned --no-unaligned --force dedupped_nodup.bam")
-				os.system(installationDirectory+"src/conda/bin/samtools mpileup -f "+projectName+"_genome.fasta dedupped.bam > pileup.txt")
-				os.system(installationDirectory+"src/conda/bin/varscan mpileup2cns pileup.txt --variants --output-vcf 1 --strand-filter 0 > output.vcf")
-				os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/scripts/assembly/utils/varscanFilter.py -i output.vcf -o output_filtered.vcf -1 deduppedReads_1.fastq -g 1 -2 deduppedReads_2.fastq -r "+projectName+"_genome.fasta -p "+installationDirectory )
-				os.system(installationDirectory+"src/conda/bin/perl "+installationDirectory+"src/scripts/assembly/utils/vcf-sort output_filtered.vcf >temp.vcf ; mv temp.vcf output_filtered.vcf")
-				os.system(installationDirectory+"src/conda/bin/bgzip -c output_filtered.vcf > output_filtered.vcf.gz 2>null")
-				os.system(installationDirectory+"src/conda/bin/tabix output_filtered.vcf.gz >null 2>&1")
-				self.logArea.append("*  *  Creating consensus")
-				self.logArea.repaint()
-				
-				
-				
-				os.system("cat "+projectName+"_genome.fasta | "+installationDirectory+"src/conda2/bin/bcftools consensus output_filtered.vcf.gz > "+projectName+"_genome.fasta_con.fasta 2>null")
-				os.system("mv output.vcf completeGenome.vcf")
-				os.system("mv output_filtered.vcf  completeGenome_filtered.vcf")
-				os.system("rm -f test*")
-				os.system("rm -f *.dict")
-
-
-
-
-				
-				self.logArea.append("Second round of consensus calling completed on sample "+projectName+"!!\n")
-				self.logArea.repaint()
-				
-				
-				os.system("cp "+projectName+"_genome.fasta_con.fasta "+workingDirectory+"/"+projectName+"_genome.fasta")
-				now = datetime.datetime.now()
-				logFile.write("Second consensus calline ended at "+now.strftime("%H:%M")+"\n\n")
 				os.chdir("../")
-			else:
-				if os.path.isfile("./6_createConsensus/"+projectName+"_genome.fasta")==False:
-					print("You chose not to run the consensus call step but "+projectName+"_genome.fasta  file is not there. Now exiting......")
-					logFile.write("You chose not to run the consensus call step but "+projectName+"_genome.fasta  file is not there. Now exiting......")
-					exit()
-
-			
-			self.logArea.append("\n\nAll processes completed on sample "+projectName+"!!\n")
-			self.logArea.repaint()
-			
-			
-			
-			os.chdir("../")
+			except:
+				print("Error, a problem occured with file:"+cFile,"\nSkipped processing and continued with any other existing files")
 
 
 
