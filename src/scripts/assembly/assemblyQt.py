@@ -9,6 +9,7 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QFileDialog 
 from PyQt5.QtWidgets import QInputDialog
+from PyQt5.QtWidgets import QMessageBox 
 
 import sys,os
 import datetime
@@ -143,9 +144,8 @@ class Ui_Form(object):
 		if str(self.selectedFilesArea.toPlainText()) == "":
 			msg = QMessageBox()
 			msg.setIcon(QMessageBox.Warning)
-			msg.setText("No de novo configuration files has been selected.")
+			msg.setText("No de novo configuration files has been selected.\nPlease Select at least one denovo configuration file.")
 			msg.setWindowTitle("Warning")
-			msg.setDetailedText("You should select at least one denovo configuration file\n ")
 			msg.setStandardButtons(QMessageBox.Ok)
 			msg.exec_()
 			return
