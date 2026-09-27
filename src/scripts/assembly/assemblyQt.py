@@ -1262,8 +1262,8 @@ class Ui_Form(object):
 				
 				
 				os.chdir("../")
-			except:
-				print("Error, a problem occured with file:"+cFile,"\nSkipped processing and continued with any other existing files")
+			except Exception as e:
+				print("Error, a problem occured ("+str(e)+") with file: "+cFile,"\nSkipped processing and continued with any other existing files")
 
 
 
