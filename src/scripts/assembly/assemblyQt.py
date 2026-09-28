@@ -102,14 +102,12 @@ class Ui_Form(object):
 		self.runButton.clicked.connect(self.performAssembly)
 
 
-
 	def bowtiePE(self,reference,read1,read2,numTh):
 		os.system(installationDirectory+"src/conda/bin/python "+installationDirectory+"src/conda/bin/bowtie2-build "+reference+" reference -q >null 2>&1")
 
 		os.system(installationDirectory+"src/conda/bin/bowtie2  -1 "+read1+" -2 "+read2+" -x reference -S test.sam -p "+numTh)
 		os.system(installationDirectory+"src/conda/bin/samtools view -bS -h test.sam > test.bam 2>null")
 		os.system(installationDirectory+"src/conda/bin/samtools sort -o test_sorted.bam test.bam >null 2>&1")
-
 
 
 	def bwaPE(self,reference,read1,read2,alName,numThreads,editDist):
@@ -130,6 +128,8 @@ class Ui_Form(object):
 			self.selectedFilesArea.append((filename.split("/"))[-1])
 		self.confFiles = filenames
 	
+ 
+ 
 	def refreshTextArea(self,selected):
 		self.selectedFilesArea.clear()
 		for item in self.confFiles:
@@ -138,7 +138,6 @@ class Ui_Form(object):
 			else:
 				self.selectedFilesArea.append((item.split("/"))[-1])
 
-	
 
 	def performAssembly(self):
 		if str(self.selectedFilesArea.toPlainText()) == "":
@@ -170,9 +169,9 @@ class Ui_Form(object):
 				confFile.readline() #Read comment
 
 				now = datetime.datetime.now()
-				logFile.write("Date: "+now.strftime("%Y-%m-%d"))
-				logFile.write("Sample name: "+projectName)
-				logFile.write("Read1 fastq: "+read1)
+				logFile.write("Date: "+now.strftime("%Y-%m-%d")+" ")
+				logFile.write("Sample name: "+projectName+" ")
+				logFile.write("Read1 fastq: "+read1+" ")
 				logFile.write("Read2 fastq: "+read2+"\n\n\n")
 
 				#***************************************************************
@@ -1266,7 +1265,6 @@ class Ui_Form(object):
 				print("Error, a problem occured ("+str(e)+") with file: "+cFile,"\nSkipped processing and continued with any other existing files")
 
 
-
 	def retranslateUi(self, Form):
 		_translate = QtCore.QCoreApplication.translate
 		Form.setWindowTitle(_translate("Form", "De novo assembly tool"))
@@ -1307,7 +1305,7 @@ class Ui_Form(object):
 		self.label_4.setText(_translate("Form", "Leave intermediate files"))
 		self.intermediateFilesCombo.setItemText(0, _translate("Form", "No"))
 		self.intermediateFilesCombo.setItemText(1, _translate("Form", "Yes"))
-		self.label_5.setText(_translate("Form", "Log area"))
+		self.label_5.setText(_translate("Form", "Log"))
 		self.runButton.setText(_translate("Form", "Run"))
 
 
